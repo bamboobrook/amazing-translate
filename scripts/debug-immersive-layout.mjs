@@ -6,16 +6,29 @@ const html = [
   '<header>',
   '  <nav style="display:flex;gap:24px"><a href="/news">News</a><a href="/video">Video</a><a href="/prices">Prices</a></nav>',
   '</header>',
+  '<header role="banner" class="x-sidebar-shell" style="position:fixed;left:0;top:0;width:220px;height:760px">',
+  '<nav role="navigation" class="x-sidebar" style="display:flex;flex-direction:column">',
+  '  <a href="/i/grok">Grok</a>',
+  '  <a href="/i/bookmarks">书签</a>',
+  '  <a href="/i/premium">Premium</a>',
+  '  <a href="/profile">个人资料</a>',
+  '</nav>',
+  '</header>',
   '<main>',
   '  <section style="display:flex;justify-content:space-between;align-items:center">',
   '    <h2>Featured Stories</h2>',
   '    <a href="/stories">View all stories</a>',
   '  </section>',
+  '  <aside class="x-live-card"><h2>X 上的直播</h2><p>比特币按预期暴跌，后续怎么看？水哥盈利300万！</p></aside>',
   '  <article>',
   '    <h1 style="color:rgb(89, 42, 130)">A concise heading for immersive translation testing</h1>',
   '    <p style="color:rgb(35, 47, 62)">Modern browser extensions can improve reading workflows without sending every page to a remote service automatically.</p>',
   '    <p>A manual translation flow gives the reader control over cost, privacy, and timing.</p>',
   '    <blockquote>Selected text should stay close to its original paragraph when translated inline.</blockquote>',
+  '    <p>6月10日 @dr3dn0t · 6月10日</p>',
+  '    <p>这是中文内容，目标语言是中文时不应该再次翻译，也不应该产生重复译文。</p>',
+  '    <p>Try it out today because the AI demo is live and the audience can inspect every result.</p>',
+  '    <p>Welcome to Computex, 全球最大的 AI 展览.</p>',
   '  </article>',
   '</main>',
   '</body></html>'
@@ -29,6 +42,7 @@ const dom = new JSDOM(html, {
 
 const { window } = dom;
 Object.defineProperty(window, 'innerHeight', { value: 800, configurable: true });
+Object.defineProperty(window, 'innerWidth', { value: 1280, configurable: true });
 Object.defineProperty(window.HTMLElement.prototype, 'innerText', {
   get() {
     return this.textContent;
@@ -40,7 +54,10 @@ Object.defineProperty(window.HTMLElement.prototype, 'innerText', {
 });
 window.HTMLElement.prototype.getBoundingClientRect = function () {
   const top = Number.parseFloat(this.style.top || '0') || 0;
-  return { x: 0, y: top, top, left: 0, right: 640, bottom: top + 42, width: 640, height: 42, toJSON: () => ({}) };
+  const left = Number.parseFloat(this.style.left || '0') || 0;
+  const width = Number.parseFloat(this.style.width || '640') || 640;
+  const height = Number.parseFloat(this.style.height || '42') || 42;
+  return { x: left, y: top, top, left, right: left + width, bottom: top + height, width, height, toJSON: () => ({}) };
 };
 
 if (!window.PointerEvent) {
@@ -71,7 +88,7 @@ window.getSelection = () => ({
 window.chrome = {
   runtime: {
     sendMessage: async (request) => {
-      if (request.type === 'GET_SETTINGS') return { ok: true, data: { displayMode: 'below' } };
+      if (request.type === 'GET_SETTINGS') return { ok: true, data: { displayMode: 'below', targetLanguage: 'zh-Hans' } };
       if (request.type === 'TRANSLATE_BATCH') {
         capturedBlocks.push(...request.blocks);
         if (batchDelayMs > 0) await new Promise((resolve) => window.setTimeout(resolve, batchDelayMs));
@@ -161,6 +178,12 @@ for (const expected of ['News', 'Video', 'Prices', 'Featured Stories', 'View all
   if (!capturedText.includes(expected)) failures.push('expected to capture compact/navigation label: ' + expected);
 }
 if (!capturedText.some((text) => /Modern browser extensions/.test(text))) failures.push('expected article paragraph text to be captured');
+if (!capturedText.some((text) => /Try it out today/.test(text))) failures.push('expected English X-style post text to be captured');
+if (!capturedText.some((text) => /Welcome to Computex/.test(text))) failures.push('expected English-dominant mixed text to be captured');
+for (const unexpected of ['Grok', 'Premium', '书签', '个人资料', 'X 上的直播', '比特币按预期暴跌，后续怎么看？水哥盈利300万！']) {
+  if (capturedText.includes(unexpected)) failures.push('expected to skip target-language or fixed-sidebar text: ' + unexpected);
+}
+if (capturedText.some((text) => /目标语言是中文时不应该再次翻译|6月10日/.test(text))) failures.push('expected Chinese target-language content and metadata to be skipped');
 if (initialToolbarActions.length !== 1 || initialToolbarActions[0] !== 'translate') failures.push('expected default toolbar to expose one translate button, got ' + initialToolbarActions.join(','));
 if (translatedToolbarAction !== 'restore' || !translatedToolbarLabel.includes('恢复原文')) failures.push('expected toolbar to switch to restore after translating page');
 if (!selectionButton) failures.push('selection AT button was not shown');

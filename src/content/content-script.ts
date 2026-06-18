@@ -4,6 +4,7 @@ type DisplayMode = "below" | "replace";
 
 interface ExtensionSettings {
   displayMode: DisplayMode;
+  targetLanguage: string;
 }
 
 interface TextBlock {
@@ -51,7 +52,7 @@ interface InsertedTranslation {
 type TranslationPlacement = "after" | "compact-block" | "compact-inline";
 
 interface AmazingTranslateDebugApi {
-  collectPageBlocks: (root?: ParentNode, options?: { onlyUntranslated?: boolean }) => PageTextBlock[];
+  collectPageBlocks: (root?: ParentNode, options?: { onlyUntranslated?: boolean; targetLanguage?: string }) => PageTextBlock[];
   translatePage: () => Promise<void>;
   restorePage: () => void;
   ensureToolbar: () => HTMLElement;
@@ -79,6 +80,7 @@ const CONTENT_CSS = `
 const MAX_PAGE_BLOCKS = 600;
 const GENERIC_TEXT_LIMIT = 360;
 const COMPACT_TEXT_LIMIT = 88;
+const DEFAULT_TARGET_LANGUAGE = "zh-Hans";
 const COMPACT_PARENT_DISPLAYS = new Set(["flex", "inline-flex", "grid", "inline-grid"]);
 
 const SEMANTIC_TEXT_SELECTOR = [
@@ -214,12 +216,71 @@ const isVisible = (element: HTMLElement): boolean => {
   return rect.width > 0 && rect.height > 0;
 };
 
+const countMatches = (text: string, pattern: RegExp): number => text.match(pattern)?.length || 0;
+
+const countHan = (text: string): number => countMatches(text, /[\u3400-\u4DBF\u4E00-\u9FFF\uF900-\uFAFF]/g);
+const countKana = (text: string): number => countMatches(text, /[\u3040-\u30FF]/g);
+const countHangul = (text: string): number => countMatches(text, /[\uAC00-\uD7AF]/g);
+const countLatin = (text: string): number => countMatches(text, /[A-Za-z]/g);
+
+const stripWeakLanguageSignals = (text: string): string =>
+  text
+    .replace(/https?:\/\/\S+|www\.\S+/gi, " ")
+    .replace(/[@#][\p{L}\p{N}_-]+/gu, " ")
+    .replace(/[\d_]+/g, " ");
+
+const isMetadataOnlyText = (text: string): boolean => {
+  const compact = text.replace(/\s+/g, "").trim();
+  if (!compact) return true;
+  if (/^[\d年月日号:：,.，。/\-–—·@A-Za-z_\s]+$/.test(compact) && /[年月日]|@/.test(compact)) return true;
+  if (/^(by|updated|published|sponsored by|advertisement|sign up|log in|subscribe)\b/i.test(text)) return true;
+  if (/^by\s+[A-Z][A-Za-z .-]+[A-Z][a-z]{2}\s+\d{1,2},\s+\d{4}$/i.test(text)) return true;
+  return false;
+};
+
+const targetLanguageFamily = (targetLanguage = DEFAULT_TARGET_LANGUAGE): "zh" | "ja" | "ko" | "en" | "other" => {
+  const language = targetLanguage.toLowerCase();
+  if (language.startsWith("zh")) return "zh";
+  if (language.startsWith("ja")) return "ja";
+  if (language.startsWith("ko")) return "ko";
+  if (language.startsWith("en")) return "en";
+  return "other";
+};
+
+const isTargetChineseText = (han: number, latin: number): boolean => {
+  if (han < 2) return false;
+  if (latin === 0) return true;
+  if (han >= 2 && latin <= 4) return true;
+  if (han >= 4 && latin <= 12) return true;
+  return han >= 6 && han >= latin * 0.8;
+};
+
+const isLikelyTargetLanguageText = (text: string, targetLanguage = DEFAULT_TARGET_LANGUAGE): boolean => {
+  const meaningful = stripWeakLanguageSignals(text);
+  const han = countHan(meaningful);
+  const kana = countKana(meaningful);
+  const hangul = countHangul(meaningful);
+  const latin = countLatin(meaningful);
+  const cjk = han + kana + hangul;
+
+  switch (targetLanguageFamily(targetLanguage)) {
+    case "zh":
+      return isTargetChineseText(han, latin);
+    case "ja":
+      return kana >= 2 || han >= 4 && kana + han >= latin * 0.5;
+    case "ko":
+      return hangul >= 2 && hangul >= latin * 0.5;
+    case "en":
+      return latin >= 8 && cjk === 0;
+    default:
+      return false;
+  }
+};
+
 const isMeaningfulText = (text: string): boolean => {
-  if (text.length < 10 || /^[-–—•\d\s.,:;!?]+$/.test(text)) return false;
-  const letters = text.match(/[A-Za-z]/g)?.length || 0;
-  if (letters < 5) return false;
-  if (/^(by|updated|published|sponsored by|advertisement|sign up|log in|subscribe)\b/i.test(text)) return false;
-  if (/^by\s+[A-Z][A-Za-z .-]+[A-Z][a-z]{2}\s+\d{1,2},\s+\d{4}$/i.test(text)) return false;
+  if (text.length < 10 || /^[-–—•\d\s.,:;!?]+$/.test(text) || isMetadataOnlyText(text)) return false;
+  const semanticLetters = countLatin(text) + countHan(text) + countKana(text) + countHangul(text);
+  if (semanticLetters < 5) return false;
   return true;
 };
 
@@ -243,6 +304,43 @@ const getElementMetadata = (element: HTMLElement): string =>
     .filter(Boolean)
     .join(" ");
 
+const isFixedSidebarChrome = (element: HTMLElement): boolean => {
+  const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 1024;
+  const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 768;
+
+  const isSideRail = (node: HTMLElement): boolean => {
+    const rect = node.getBoundingClientRect();
+    const nearViewportSide = rect.left <= viewportWidth * 0.2 || rect.right >= viewportWidth * 0.8;
+    return (
+      rect.height >= Math.min(320, viewportHeight * 0.45) &&
+      rect.width > 0 &&
+      rect.width <= Math.min(420, viewportWidth * 0.4) &&
+      nearViewportSide
+    );
+  };
+
+  const isPinned = (node: HTMLElement): boolean => {
+    const position = window.getComputedStyle(node).position;
+    return position === "fixed" || position === "sticky" || node.matches("header[role='banner']");
+  };
+
+  const hasPinnedSideRail = (node: HTMLElement): boolean => {
+    let current: HTMLElement | null = node;
+    while (current && current !== document.body) {
+      if (isPinned(current) && isSideRail(current)) return true;
+      current = current.parentElement;
+    }
+    return false;
+  };
+
+  let current: HTMLElement | null = element;
+  while (current && current !== document.body) {
+    if (current.matches("nav,[role='navigation'],header,[role='banner']") && hasPinnedSideRail(current)) return true;
+    current = current.parentElement;
+  }
+  return false;
+};
+
 const isLikelyUiLabelElement = (element: HTMLElement): boolean => {
   if (element.closest("header,nav,[role='navigation']")) return element.matches("a[href],span,div,li");
   if (element.matches("a[href],h1,h2,h3,h4,h5,h6,[role='heading'],summary,dt,th,caption")) return true;
@@ -251,8 +349,11 @@ const isLikelyUiLabelElement = (element: HTMLElement): boolean => {
   return COMPACT_PARENT_DISPLAYS.has(parentDisplay) && element.childElementCount <= 2;
 };
 
-const isTranslatableText = (element: HTMLElement, text: string): boolean =>
-  isMeaningfulText(text) || (isLikelyUiLabelElement(element) && isShortUiLabelText(text));
+const isTranslatableText = (element: HTMLElement, text: string, targetLanguage = DEFAULT_TARGET_LANGUAGE): boolean => {
+  if (isMetadataOnlyText(text) || isLikelyTargetLanguageText(text, targetLanguage)) return false;
+  if (isFixedSidebarChrome(element)) return false;
+  return isMeaningfulText(text) || (isLikelyUiLabelElement(element) && isShortUiLabelText(text));
+};
 
 const isSemanticTextElement = (element: HTMLElement): boolean =>
   SEMANTIC_TAGS.has(element.tagName) || element.hasAttribute("data-amazing-translate-block");
@@ -267,12 +368,12 @@ const textWithBreaks = (element: HTMLElement): string => {
   return normalizeText(clone.innerText || clone.textContent || "");
 };
 
-const hasCollectableDescendant = (element: HTMLElement): boolean => {
+const hasCollectableDescendant = (element: HTMLElement, targetLanguage = DEFAULT_TARGET_LANGUAGE): boolean => {
   const descendants = Array.from(element.querySelectorAll<HTMLElement>(BLOCK_SELECTOR));
   for (const child of descendants) {
     if (child === element || hasSkippedAncestor(child) || !isVisible(child)) continue;
     const text = textWithBreaks(child);
-    if (!isTranslatableText(child, text)) continue;
+    if (!isTranslatableText(child, text, targetLanguage)) continue;
     if (!isSemanticTextElement(child) && text.length > GENERIC_TEXT_LIMIT) continue;
     return true;
   }
@@ -338,23 +439,29 @@ const addBlock = (blocks: PageTextBlock[], seen: Set<HTMLElement>, element: HTML
   seen.add(element);
 };
 
-const shouldCollectElement = (element: HTMLElement, seen: Set<HTMLElement>, _onlyUntranslated: boolean): boolean => {
-  if (seen.has(element) || hasSkippedAncestor(element) || hasSelectedAncestor(element) || !isVisible(element)) return false;
+const shouldCollectElement = (
+  element: HTMLElement,
+  seen: Set<HTMLElement>,
+  _onlyUntranslated: boolean,
+  targetLanguage = DEFAULT_TARGET_LANGUAGE
+): boolean => {
+  if (seen.has(element) || hasSkippedAncestor(element) || hasSelectedAncestor(element) || !isVisible(element) || isFixedSidebarChrome(element)) return false;
   if (isSemanticTextElement(element)) return !hasBlockDescendant(element);
-  if (hasBlockDescendant(element) || hasCollectableDescendant(element)) return false;
+  if (hasBlockDescendant(element) || hasCollectableDescendant(element, targetLanguage)) return false;
   return true;
 };
 
 const collectFallbackBlocks = (
   blocks: PageTextBlock[],
   seen: Set<HTMLElement>,
-  onlyUntranslated: boolean
+  onlyUntranslated: boolean,
+  targetLanguage = DEFAULT_TARGET_LANGUAGE
 ) => {
   const containers = Array.from(document.querySelectorAll<HTMLElement>(FALLBACK_CONTAINER_SELECTOR));
   for (const container of containers) {
-    if (!shouldCollectElement(container, seen, onlyUntranslated) || hasBlockDescendant(container)) continue;
+    if (!shouldCollectElement(container, seen, onlyUntranslated, targetLanguage) || hasBlockDescendant(container)) continue;
     const text = textWithBreaks(container);
-    if (!isTranslatableText(container, text) || text.length > GENERIC_TEXT_LIMIT) continue;
+    if (!isTranslatableText(container, text, targetLanguage) || text.length > GENERIC_TEXT_LIMIT) continue;
     if (onlyUntranslated && isTranslationCurrent(container, text)) continue;
     if (onlyUntranslated) removeStaleTranslation(container, text);
     addBlock(blocks, seen, container, text);
@@ -362,16 +469,20 @@ const collectFallbackBlocks = (
   }
 };
 
-const collectPageBlocks = (root: ParentNode = document, options: { onlyUntranslated?: boolean } = {}): PageTextBlock[] => {
+const collectPageBlocks = (
+  root: ParentNode = document,
+  options: { onlyUntranslated?: boolean; targetLanguage?: string } = {}
+): PageTextBlock[] => {
   const candidates = Array.from(root.querySelectorAll<HTMLElement>(BLOCK_SELECTOR));
   const blocks: PageTextBlock[] = [];
   const seen = new Set<HTMLElement>();
   const onlyUntranslated = options.onlyUntranslated ?? false;
+  const targetLanguage = options.targetLanguage || DEFAULT_TARGET_LANGUAGE;
 
   for (const element of candidates) {
-    if (!shouldCollectElement(element, seen, onlyUntranslated)) continue;
+    if (!shouldCollectElement(element, seen, onlyUntranslated, targetLanguage)) continue;
     const text = textWithBreaks(element);
-    if (!isTranslatableText(element, text)) continue;
+    if (!isTranslatableText(element, text, targetLanguage)) continue;
     if (!isSemanticTextElement(element) && text.length > GENERIC_TEXT_LIMIT) continue;
     if (onlyUntranslated && isTranslationCurrent(element, text)) continue;
     if (onlyUntranslated) removeStaleTranslation(element, text);
@@ -379,7 +490,7 @@ const collectPageBlocks = (root: ParentNode = document, options: { onlyUntransla
     if (blocks.length >= MAX_PAGE_BLOCKS) return blocks;
   }
 
-  collectFallbackBlocks(blocks, seen, onlyUntranslated);
+  collectFallbackBlocks(blocks, seen, onlyUntranslated, targetLanguage);
   return blocks.slice(0, MAX_PAGE_BLOCKS);
 };
 const findEditableTarget = (): HTMLTextAreaElement | HTMLInputElement | HTMLElement | null => {
@@ -648,13 +759,13 @@ const translatePage = async (options: { incremental?: boolean } = {}) => {
   translatingPage = true;
 
   try {
-    const blocks = collectPageBlocks(document, { onlyUntranslated: true });
+    const settings = await sendMessage<ExtensionSettings>({ type: "GET_SETTINGS" });
+    const blocks = collectPageBlocks(document, { onlyUntranslated: true, targetLanguage: settings.targetLanguage });
     if (blocks.length === 0) {
       if (!incremental) showToast(inserted.size > 0 ? "当前页面内容已翻译" : "没有找到适合翻译的正文内容", inserted.size > 0 ? "info" : "error");
       return;
     }
 
-    const settings = await sendMessage<ExtensionSettings>({ type: "GET_SETTINGS" });
     showPendingIndicators(blocks, settings);
     if (!incremental) showToast(`正在逐段翻译 ${blocks.length} 段文本...`);
     const response = await sendMessage<TranslateResponse>({
