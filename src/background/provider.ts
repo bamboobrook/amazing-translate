@@ -13,12 +13,12 @@ const providerName = (provider: ProviderId): string => (provider === "deepseek" 
 
 const completionUrl = (config: ProviderConfig): string => `${config.baseUrl.replace(/\/$/, "")}/chat/completions`;
 
-const systemPrompt = "You are a careful translation engine for a browser extension. Translate only the provided text. Preserve meaning, numbers, Markdown-like inline markers, and the user's line breaks where possible. Return compact JSON only.";
+const systemPrompt = "You are a careful paragraph-by-paragraph translation engine for a browser extension. Translate each input item independently. Never merge, summarize, skip, reorder, or combine items. Preserve meaning, numbers, Markdown-like inline markers, and the user's line breaks where possible. Return compact JSON only.";
 
 const buildPrompt = (blocks: TextBlock[], sourceLanguage: string, targetLanguage: string): string =>
   JSON.stringify({
     instruction:
-      "Translate each item. Return exactly {\"translations\":[{\"id\":string,\"text\":string}]} with every id preserved.",
+      "Translate each item independently. Return exactly {\"translations\":[{\"id\":string,\"text\":string}]} with every id preserved. The number of translations must equal the number of items. Do not merge adjacent paragraphs.",
     sourceLanguage,
     targetLanguage,
     items: blocks

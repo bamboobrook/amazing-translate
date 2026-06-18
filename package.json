@@ -8,7 +8,8 @@
     "build": "vite build",
     "dev": "vite build --watch",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "debug:immersive": "npm run build && node scripts/debug-immersive-layout.mjs"
   },
   "devDependencies": {
     "@types/chrome": "^0.0.287",

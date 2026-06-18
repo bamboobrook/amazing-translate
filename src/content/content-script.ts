@@ -47,7 +47,28 @@ interface InsertedTranslation {
   node: HTMLElement;
 }
 
-const CONTENT_CSS = `.amazing-translate-result{margin:.35em 0 .85em;padding:.55em .75em;border-left:3px solid #2563eb;background:#eef4ff;color:#16325c;font-size:.96em;line-height:1.65;border-radius:4px}.amazing-translate-toolbar{position:fixed;right:18px;bottom:18px;z-index:2147483647;display:flex;gap:8px;padding:8px;border:1px solid #c8d2e4;border-radius:8px;background:#fff;box-shadow:0 10px 30px rgba(25,35,55,.18);font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.amazing-translate-toolbar button,.amazing-translate-popover button{border:0;border-radius:6px;background:#2563eb;color:#fff;cursor:pointer;font:inherit;padding:7px 10px}.amazing-translate-toolbar button[data-action=restore]{background:#475569}.amazing-translate-popover{position:absolute;z-index:2147483647;box-sizing:border-box;max-width:360px;padding:12px;border:1px solid #c8d2e4;border-radius:8px;background:#fff;color:#1f2937;box-shadow:0 14px 40px rgba(25,35,55,.22);font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:14px;line-height:1.6}.amazing-translate-popover-text{margin-bottom:10px;white-space:pre-wrap}.amazing-translate-toast{position:fixed;left:50%;top:18px;z-index:2147483647;transform:translateX(-50%);max-width:min(520px,calc(100vw - 32px));padding:10px 14px;border-radius:8px;background:#1f2937;color:#fff;box-shadow:0 10px 30px rgba(25,35,55,.2);font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:14px}.amazing-translate-toast.error{background:#b42318}`;
+const CONTENT_CSS = `.amazing-translate-result{display:block;margin:.18em 0 .72em;padding:0;border:0;background:transparent;color:#2563eb;font-size:.96em;line-height:1.72;font-weight:400;white-space:pre-wrap}.amazing-translate-result:before{content:"";display:none}.amazing-translate-result[data-display-mode=replace]{margin:.18em 0 .72em;color:#172033}.amazing-translate-toolbar{position:fixed;right:18px;bottom:18px;z-index:2147483647;display:flex;gap:8px;padding:8px;border:1px solid #c8d2e4;border-radius:8px;background:#fff;box-shadow:0 10px 30px rgba(25,35,55,.18);font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.amazing-translate-toolbar button,.amazing-translate-popover button{border:0;border-radius:6px;background:#2563eb;color:#fff;cursor:pointer;font:inherit;padding:7px 10px}.amazing-translate-toolbar button[data-action=restore]{background:#475569}.amazing-translate-popover{position:absolute;z-index:2147483647;box-sizing:border-box;max-width:360px;padding:12px;border:1px solid #c8d2e4;border-radius:8px;background:#fff;color:#1f2937;box-shadow:0 14px 40px rgba(25,35,55,.22);font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:14px;line-height:1.6}.amazing-translate-popover-text{margin-bottom:10px;white-space:pre-wrap}.amazing-translate-toast{position:fixed;left:50%;top:18px;z-index:2147483647;transform:translateX(-50%);max-width:min(520px,calc(100vw - 32px));padding:10px 14px;border-radius:8px;background:#1f2937;color:#fff;box-shadow:0 10px 30px rgba(25,35,55,.2);font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:14px}.amazing-translate-toast.error{background:#b42318}`;
+
+const BLOCK_SELECTOR = [
+  "article p",
+  "article li",
+  "article blockquote",
+  "main p",
+  "main li",
+  "main blockquote",
+  "section p",
+  "section li",
+  "section blockquote",
+  "p",
+  "li",
+  "blockquote",
+  "h1",
+  "h2",
+  "h3",
+  "[data-amazing-translate-block]"
+].join(",");
+
+const FALLBACK_CONTAINER_SELECTOR = "article, main, [role='main'], .article, .post, .content, .entry-content";
 
 const SKIP_SELECTOR = [
   "script",
@@ -61,13 +82,15 @@ const SKIP_SELECTOR = [
   "input",
   "select",
   "button",
+  "nav",
+  "footer",
+  "header",
+  "aside",
   "[contenteditable='true']",
   "[data-amazing-translate]",
   ".amazing-translate-result",
   ".amazing-translate-popover"
 ].join(",");
-
-const BLOCK_SELECTOR = "article p, article li, main p, main li, section p, section li, p, li, blockquote, h1, h2, h3";
 
 const inserted = new Map<string, InsertedTranslation>();
 let popover: HTMLElement | null = null;
@@ -99,6 +122,15 @@ const showToast = (message: string, tone: "info" | "error" = "info") => {
   window.setTimeout(() => toast.remove(), 3600);
 };
 
+const hasSkippedAncestor = (element: HTMLElement): boolean => Boolean(element.closest(SKIP_SELECTOR));
+
+const normalizeText = (text: string): string =>
+  text
+    .replace(/\u00a0/g, " ")
+    .replace(/[ \t\f\v]+/g, " ")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+
 const isVisible = (element: HTMLElement): boolean => {
   const style = window.getComputedStyle(element);
   if (style.display === "none" || style.visibility === "hidden" || style.opacity === "0") return false;
@@ -106,9 +138,32 @@ const isVisible = (element: HTMLElement): boolean => {
   return rect.width > 0 && rect.height > 0;
 };
 
-const hasSkippedAncestor = (element: HTMLElement): boolean => Boolean(element.closest(SKIP_SELECTOR));
+const isMeaningfulText = (text: string): boolean => text.length >= 18 && !/^[-–—•\d\s.,:;!?]+$/.test(text);
 
-const normalizeText = (text: string): string => text.replace(/\s+/g, " ").trim();
+const hasBlockDescendant = (element: HTMLElement): boolean =>
+  Boolean(element.querySelector("p, li, blockquote, h1, h2, h3, [data-amazing-translate-block]"));
+
+const textWithBreaks = (element: HTMLElement): string => {
+  const clone = element.cloneNode(true) as HTMLElement;
+  clone.querySelectorAll("br").forEach((br) => br.replaceWith("\n"));
+  return normalizeText(clone.innerText || clone.textContent || "");
+};
+
+const collectFallbackBlocks = (blocks: PageTextBlock[], seen: Set<HTMLElement>) => {
+  const containers = Array.from(document.querySelectorAll<HTMLElement>(FALLBACK_CONTAINER_SELECTOR));
+  for (const container of containers) {
+    if (hasSkippedAncestor(container) || !isVisible(container) || hasBlockDescendant(container)) continue;
+    const text = textWithBreaks(container);
+    const pieces = text.split(/\n{2,}/).map(normalizeText).filter(isMeaningfulText);
+    if (pieces.length <= 1) continue;
+    for (const piece of pieces) {
+      const id = `block-${blocks.length + 1}`;
+      container.dataset.amazingTranslateId = id;
+      blocks.push({ id, text: piece, element: container });
+    }
+    seen.add(container);
+  }
+};
 
 const collectPageBlocks = (root: ParentNode = document): PageTextBlock[] => {
   const candidates = Array.from(root.querySelectorAll<HTMLElement>(BLOCK_SELECTOR));
@@ -117,15 +172,17 @@ const collectPageBlocks = (root: ParentNode = document): PageTextBlock[] => {
 
   for (const element of candidates) {
     if (seen.has(element) || hasSkippedAncestor(element) || !isVisible(element)) continue;
-    if (element.querySelector("p, li, blockquote")) continue;
-    const text = normalizeText(element.innerText || element.textContent || "");
-    if (text.length < 24 || /^[-–—•\d\s.,:;!?]+$/.test(text)) continue;
+    if (hasBlockDescendant(element)) continue;
+    const text = textWithBreaks(element);
+    if (!isMeaningfulText(text)) continue;
     const id = `block-${blocks.length + 1}`;
     element.dataset.amazingTranslateId = id;
     blocks.push({ id, text, element });
     seen.add(element);
   }
-  return blocks.slice(0, 120);
+
+  collectFallbackBlocks(blocks, seen);
+  return blocks.slice(0, 180);
 };
 
 const findEditableTarget = (): HTMLTextAreaElement | HTMLInputElement | HTMLElement | null => {
@@ -184,16 +241,23 @@ const restorePage = () => {
   showToast("已恢复原文");
 };
 
+const createTranslationNode = (translation: TranslationResult, settings: ExtensionSettings): HTMLElement => {
+  const node = document.createElement("div");
+  node.className = "amazing-translate-result";
+  node.dataset.amazingTranslate = "true";
+  node.dataset.amazingTranslateFor = translation.id;
+  node.dataset.displayMode = settings.displayMode;
+  node.textContent = translation.text;
+  return node;
+};
+
 const renderTranslations = async (translations: TranslationResult[]) => {
   const settings = await sendMessage<ExtensionSettings>({ type: "GET_SETTINGS" });
   for (const translation of translations) {
     const source = document.querySelector<HTMLElement>(`[data-amazing-translate-id="${translation.id}"]`);
     if (!source || !translation.text) continue;
     inserted.get(translation.id)?.node.remove();
-    const node = document.createElement("div");
-    node.className = "amazing-translate-result";
-    node.dataset.amazingTranslate = "true";
-    node.textContent = translation.text;
+    const node = createTranslationNode(translation, settings);
     if (settings.displayMode === "replace") source.style.display = "none";
     source.insertAdjacentElement("afterend", node);
     inserted.set(translation.id, { source, node });
@@ -207,14 +271,14 @@ const translatePage = async () => {
     showToast("没有找到适合翻译的正文内容", "error");
     return;
   }
-  showToast(`正在翻译 ${blocks.length} 段文本...`);
+  showToast(`正在逐段翻译 ${blocks.length} 段文本...`);
   try {
     const response = await sendMessage<TranslateResponse>({
       type: "TRANSLATE_BATCH",
       blocks: blocks.map(({ id, text }) => ({ id, text }))
     });
     await renderTranslations(response.translations);
-    showToast(response.cached > 0 ? `翻译完成，${response.cached} 段来自缓存` : "翻译完成");
+    showToast(response.cached > 0 ? `翻译完成，${response.cached} 段来自缓存` : "逐段翻译完成");
   } catch (error) {
     showToast(error instanceof Error ? error.message : String(error), "error");
   }
@@ -292,3 +356,13 @@ chrome.runtime.onMessage.addListener((request: { type: PageCommandType }) => {
   if (request.type === "TRANSLATE_SELECTION") translateSelection();
   if (request.type === "TRANSLATE_EDITABLE") translateEditable();
 });
+
+if (typeof window !== "undefined") {
+  Object.assign(window, {
+    __AMAZING_TRANSLATE_DEBUG__: {
+      collectPageBlocks,
+      translatePage,
+      restorePage
+    }
+  });
+}

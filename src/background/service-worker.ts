@@ -52,13 +52,20 @@ const translateWithCache = async (blocks: TextBlock[]): Promise<TranslateRespons
   });
 
   const newCacheEntries: Record<string, string> = {};
-  for (const chunk of chunkBlocks(missing, settings.maxBatchChars)) {
-    const result = await translateBatch(settings, chunk, sourceLanguage, targetLanguage);
+  const applyResults = (result: TranslationResult[]) => {
     for (const item of result) {
       if (!item.text) continue;
       translations.set(item.id, item.text);
       const key = missingKeys.get(item.id);
       if (key && settings.cacheEnabled) newCacheEntries[key] = item.text;
+    }
+  };
+
+  for (const chunk of chunkBlocks(missing, settings.maxBatchChars)) {
+    applyResults(await translateBatch(settings, chunk, sourceLanguage, targetLanguage));
+    const unresolved = chunk.filter((block) => !translations.get(block.id));
+    for (const block of unresolved) {
+      applyResults(await translateBatch(settings, [block], sourceLanguage, targetLanguage));
     }
   }
   await setCachedTranslations(newCacheEntries);
