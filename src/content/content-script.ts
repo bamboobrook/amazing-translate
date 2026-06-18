@@ -45,30 +45,77 @@ interface PageTextBlock extends TextBlock {
 interface InsertedTranslation {
   source: HTMLElement;
   node: HTMLElement;
+  sourceText: string;
 }
+
+interface AmazingTranslateDebugApi {
+  collectPageBlocks: (root?: ParentNode, options?: { onlyUntranslated?: boolean }) => PageTextBlock[];
+  translatePage: () => Promise<void>;
+  restorePage: () => void;
+  ensureToolbar: () => HTMLElement;
+}
+
+interface AmazingWindow extends Window {
+  __AMAZING_TRANSLATE_LOADED__?: boolean;
+  __AMAZING_TRANSLATE_DEBUG__?: AmazingTranslateDebugApi;
+}
+
+{
+const amazingWindow = window as AmazingWindow;
+if (amazingWindow.__AMAZING_TRANSLATE_LOADED__) {
+  amazingWindow.__AMAZING_TRANSLATE_DEBUG__?.ensureToolbar();
+} else {
+  amazingWindow.__AMAZING_TRANSLATE_LOADED__ = true;
 
 const CONTENT_CSS = `.amazing-translate-result{display:block;margin:.18em 0 .72em;padding:0;border:0;background:transparent;color:#2563eb;font-size:.96em;line-height:1.72;font-weight:400;white-space:pre-wrap}.amazing-translate-result:before{content:"";display:none}.amazing-translate-result[data-display-mode=replace]{margin:.18em 0 .72em;color:#172033}.amazing-translate-toolbar{position:fixed;right:18px;bottom:18px;z-index:2147483647;display:flex;gap:8px;padding:8px;border:1px solid #c8d2e4;border-radius:8px;background:#fff;box-shadow:0 10px 30px rgba(25,35,55,.18);font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.amazing-translate-toolbar button,.amazing-translate-popover button{border:0;border-radius:6px;background:#2563eb;color:#fff;cursor:pointer;font:inherit;padding:7px 10px}.amazing-translate-toolbar button[data-action=restore]{background:#475569}.amazing-translate-popover{position:absolute;z-index:2147483647;box-sizing:border-box;max-width:360px;padding:12px;border:1px solid #c8d2e4;border-radius:8px;background:#fff;color:#1f2937;box-shadow:0 14px 40px rgba(25,35,55,.22);font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:14px;line-height:1.6}.amazing-translate-popover-text{margin-bottom:10px;white-space:pre-wrap}.amazing-translate-toast{position:fixed;left:50%;top:18px;z-index:2147483647;transform:translateX(-50%);max-width:min(520px,calc(100vw - 32px));padding:10px 14px;border-radius:8px;background:#1f2937;color:#fff;box-shadow:0 10px 30px rgba(25,35,55,.2);font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:14px}.amazing-translate-toast.error{background:#b42318}`;
 
-const BLOCK_SELECTOR = [
-  "article p",
-  "article li",
-  "article blockquote",
-  "main p",
-  "main li",
-  "main blockquote",
-  "section p",
-  "section li",
-  "section blockquote",
+const MAX_PAGE_BLOCKS = 600;
+const GENERIC_TEXT_LIMIT = 360;
+
+const SEMANTIC_TEXT_SELECTOR = [
   "p",
   "li",
   "blockquote",
+  "figcaption",
+  "summary",
+  "dt",
+  "dd",
+  "th",
+  "td",
+  "caption",
   "h1",
   "h2",
   "h3",
+  "h4",
+  "h5",
+  "h6",
   "[data-amazing-translate-block]"
 ].join(",");
 
+const NEWS_TEXT_SELECTOR = [
+  "main a[href]",
+  "article a[href]",
+  "[role='main'] a[href]",
+  "main span",
+  "main div",
+  "article span",
+  "article div",
+  "[role='main'] span",
+  "[role='main'] div",
+  "[class*='headline' i]",
+  "[class*='title' i]",
+  "[class*='description' i]",
+  "[class*='summary' i]",
+  "[class*='excerpt' i]",
+  "[data-testid*='headline' i]",
+  "[data-testid*='title' i]",
+  "[aria-label][href]"
+].join(",");
+
+const BLOCK_SELECTOR = `${SEMANTIC_TEXT_SELECTOR},${NEWS_TEXT_SELECTOR}`;
+
 const FALLBACK_CONTAINER_SELECTOR = "article, main, [role='main'], .article, .post, .content, .entry-content";
+const SEMANTIC_TAGS = new Set(["P", "LI", "BLOCKQUOTE", "FIGCAPTION", "SUMMARY", "DT", "DD", "TH", "TD", "CAPTION", "H1", "H2", "H3", "H4", "H5", "H6"]);
 
 const SKIP_SELECTOR = [
   "script",
@@ -84,8 +131,6 @@ const SKIP_SELECTOR = [
   "button",
   "nav",
   "footer",
-  "header",
-  "aside",
   "[contenteditable='true']",
   "[data-amazing-translate]",
   ".amazing-translate-result",
@@ -96,6 +141,12 @@ const inserted = new Map<string, InsertedTranslation>();
 let popover: HTMLElement | null = null;
 let toolbar: HTMLElement | null = null;
 let stylesInjected = false;
+let nextBlockId = 1;
+let pageTranslationActive = false;
+let translatingPage = false;
+let pendingPageTranslation = false;
+let mutationObserver: MutationObserver | null = null;
+let incrementalTimer: number | null = null;
 
 const sendMessage = async <T>(request: RuntimeRequest): Promise<T> => {
   const response = (await chrome.runtime.sendMessage(request)) as RuntimeResponse<T> | undefined;
@@ -138,53 +189,123 @@ const isVisible = (element: HTMLElement): boolean => {
   return rect.width > 0 && rect.height > 0;
 };
 
-const isMeaningfulText = (text: string): boolean => text.length >= 18 && !/^[-–—•\d\s.,:;!?]+$/.test(text);
+const isMeaningfulText = (text: string): boolean => {
+  if (text.length < 10 || /^[-–—•\d\s.,:;!?]+$/.test(text)) return false;
+  const letters = text.match(/[A-Za-z]/g)?.length || 0;
+  if (letters < 5) return false;
+  if (/^(by|updated|published|sponsored by|advertisement|sign up|log in|subscribe)\b/i.test(text)) return false;
+  if (/^by\s+[A-Z][A-Za-z .-]+[A-Z][a-z]{2}\s+\d{1,2},\s+\d{4}$/i.test(text)) return false;
+  return true;
+};
+
+const isSemanticTextElement = (element: HTMLElement): boolean =>
+  SEMANTIC_TAGS.has(element.tagName) || element.hasAttribute("data-amazing-translate-block");
 
 const hasBlockDescendant = (element: HTMLElement): boolean =>
-  Boolean(element.querySelector("p, li, blockquote, h1, h2, h3, [data-amazing-translate-block]"));
+  Boolean(element.querySelector(SEMANTIC_TEXT_SELECTOR));
 
 const textWithBreaks = (element: HTMLElement): string => {
   const clone = element.cloneNode(true) as HTMLElement;
   clone.querySelectorAll("br").forEach((br) => br.replaceWith("\n"));
+  clone.querySelectorAll("[data-amazing-translate]").forEach((node) => node.remove());
   return normalizeText(clone.innerText || clone.textContent || "");
 };
 
-const collectFallbackBlocks = (blocks: PageTextBlock[], seen: Set<HTMLElement>) => {
+const hasMeaningfulElementChildren = (element: HTMLElement): boolean => {
+  const children = Array.from(element.children).filter((child): child is HTMLElement => child instanceof HTMLElement && !hasSkippedAncestor(child));
+  if (children.length === 0) return false;
+  return children.some((child) => isMeaningfulText(textWithBreaks(child)));
+};
+
+const hasSelectedAncestor = (element: HTMLElement): boolean => {
+  const selected = element.parentElement?.closest<HTMLElement>("[data-amazing-translate-id]");
+  return Boolean(selected);
+};
+
+const removeInsertedTranslation = (id: string): void => {
+  const item = inserted.get(id);
+  if (!item) return;
+  item.source.style.display = "";
+  item.node.remove();
+  inserted.delete(id);
+};
+
+const isTranslationCurrent = (element: HTMLElement, text: string): boolean => {
+  const id = element.dataset.amazingTranslateId;
+  if (!id) return false;
+  const item = inserted.get(id);
+  return Boolean(item && item.source === element && item.sourceText === text);
+};
+
+const removeStaleTranslation = (element: HTMLElement, text: string): void => {
+  const id = element.dataset.amazingTranslateId;
+  if (!id) return;
+  const item = inserted.get(id);
+  if (item && item.source === element && item.sourceText !== text) removeInsertedTranslation(id);
+};
+
+const allocateBlockId = (element: HTMLElement): string => {
+  const existing = element.dataset.amazingTranslateId;
+  if (existing && !inserted.has(existing)) return existing;
+  let id = `block-${nextBlockId++}`;
+  while (inserted.has(id) || document.querySelector(`[data-amazing-translate-id="${id}"]`)) {
+    id = `block-${nextBlockId++}`;
+  }
+  return id;
+};
+
+const addBlock = (blocks: PageTextBlock[], seen: Set<HTMLElement>, element: HTMLElement, text: string): void => {
+  if (seen.has(element)) return;
+  const id = allocateBlockId(element);
+  element.dataset.amazingTranslateId = id;
+  blocks.push({ id, text, element });
+  seen.add(element);
+};
+
+const shouldCollectElement = (element: HTMLElement, seen: Set<HTMLElement>, _onlyUntranslated: boolean): boolean => {
+  if (seen.has(element) || hasSkippedAncestor(element) || hasSelectedAncestor(element) || !isVisible(element)) return false;
+  if (isSemanticTextElement(element)) return !hasBlockDescendant(element);
+  if (hasBlockDescendant(element) || hasMeaningfulElementChildren(element)) return false;
+  return true;
+};
+
+const collectFallbackBlocks = (
+  blocks: PageTextBlock[],
+  seen: Set<HTMLElement>,
+  onlyUntranslated: boolean
+) => {
   const containers = Array.from(document.querySelectorAll<HTMLElement>(FALLBACK_CONTAINER_SELECTOR));
   for (const container of containers) {
-    if (hasSkippedAncestor(container) || !isVisible(container) || hasBlockDescendant(container)) continue;
+    if (!shouldCollectElement(container, seen, onlyUntranslated) || hasBlockDescendant(container)) continue;
     const text = textWithBreaks(container);
-    const pieces = text.split(/\n{2,}/).map(normalizeText).filter(isMeaningfulText);
-    if (pieces.length <= 1) continue;
-    for (const piece of pieces) {
-      const id = `block-${blocks.length + 1}`;
-      container.dataset.amazingTranslateId = id;
-      blocks.push({ id, text: piece, element: container });
-    }
-    seen.add(container);
+    if (!isMeaningfulText(text) || text.length > GENERIC_TEXT_LIMIT) continue;
+    if (onlyUntranslated && isTranslationCurrent(container, text)) continue;
+    if (onlyUntranslated) removeStaleTranslation(container, text);
+    addBlock(blocks, seen, container, text);
+    if (blocks.length >= MAX_PAGE_BLOCKS) return;
   }
 };
 
-const collectPageBlocks = (root: ParentNode = document): PageTextBlock[] => {
+const collectPageBlocks = (root: ParentNode = document, options: { onlyUntranslated?: boolean } = {}): PageTextBlock[] => {
   const candidates = Array.from(root.querySelectorAll<HTMLElement>(BLOCK_SELECTOR));
   const blocks: PageTextBlock[] = [];
   const seen = new Set<HTMLElement>();
+  const onlyUntranslated = options.onlyUntranslated ?? false;
 
   for (const element of candidates) {
-    if (seen.has(element) || hasSkippedAncestor(element) || !isVisible(element)) continue;
-    if (hasBlockDescendant(element)) continue;
+    if (!shouldCollectElement(element, seen, onlyUntranslated)) continue;
     const text = textWithBreaks(element);
     if (!isMeaningfulText(text)) continue;
-    const id = `block-${blocks.length + 1}`;
-    element.dataset.amazingTranslateId = id;
-    blocks.push({ id, text, element });
-    seen.add(element);
+    if (!isSemanticTextElement(element) && text.length > GENERIC_TEXT_LIMIT) continue;
+    if (onlyUntranslated && isTranslationCurrent(element, text)) continue;
+    if (onlyUntranslated) removeStaleTranslation(element, text);
+    addBlock(blocks, seen, element, text);
+    if (blocks.length >= MAX_PAGE_BLOCKS) return blocks;
   }
 
-  collectFallbackBlocks(blocks, seen);
-  return blocks.slice(0, 180);
+  collectFallbackBlocks(blocks, seen, onlyUntranslated);
+  return blocks.slice(0, MAX_PAGE_BLOCKS);
 };
-
 const findEditableTarget = (): HTMLTextAreaElement | HTMLInputElement | HTMLElement | null => {
   const active = document.activeElement;
   if (!active) return null;
@@ -232,11 +353,49 @@ const ensureToolbar = () => {
   return toolbar;
 };
 
-const restorePage = () => {
-  for (const [, item] of inserted) {
-    item.source.style.display = "";
-    item.node.remove();
+const scheduleIncrementalTranslation = (delay = 900) => {
+  if (!pageTranslationActive) return;
+  if (incrementalTimer !== null) window.clearTimeout(incrementalTimer);
+  incrementalTimer = window.setTimeout(() => {
+    incrementalTimer = null;
+    void translatePage({ incremental: true });
+  }, delay);
+};
+
+const startContinuousTranslation = () => {
+  if (!mutationObserver) {
+    mutationObserver = new MutationObserver((mutations) => {
+      const hasChangedContent = mutations.some((mutation) =>
+        mutation.type === "characterData" ||
+        (mutation.target instanceof HTMLElement && Boolean(mutation.target.closest("[data-amazing-translate-id]"))) ||
+        Array.from(mutation.addedNodes).some(
+          (node) => node instanceof HTMLElement && !node.matches("[data-amazing-translate]") && !hasSkippedAncestor(node)
+        )
+      );
+      if (hasChangedContent) scheduleIncrementalTranslation();
+    });
+    mutationObserver.observe(document.body || document.documentElement, { childList: true, characterData: true, subtree: true });
   }
+  window.addEventListener("scroll", handleViewportChange, { passive: true });
+  window.addEventListener("resize", handleViewportChange, { passive: true });
+};
+
+const stopContinuousTranslation = () => {
+  mutationObserver?.disconnect();
+  mutationObserver = null;
+  window.removeEventListener("scroll", handleViewportChange);
+  window.removeEventListener("resize", handleViewportChange);
+  if (incrementalTimer !== null) window.clearTimeout(incrementalTimer);
+  incrementalTimer = null;
+};
+
+const handleViewportChange = () => scheduleIncrementalTranslation();
+
+const restorePage = () => {
+  pageTranslationActive = false;
+  pendingPageTranslation = false;
+  stopContinuousTranslation();
+  for (const id of Array.from(inserted.keys())) removeInsertedTranslation(id);
   inserted.clear();
   showToast("已恢复原文");
 };
@@ -251,36 +410,63 @@ const createTranslationNode = (translation: TranslationResult, settings: Extensi
   return node;
 };
 
-const renderTranslations = async (translations: TranslationResult[]) => {
+const renderTranslations = async (translations: TranslationResult[], sourceTexts = new Map<string, string>()): Promise<number> => {
   const settings = await sendMessage<ExtensionSettings>({ type: "GET_SETTINGS" });
+  let rendered = 0;
   for (const translation of translations) {
     const source = document.querySelector<HTMLElement>(`[data-amazing-translate-id="${translation.id}"]`);
     if (!source || !translation.text) continue;
     inserted.get(translation.id)?.node.remove();
     const node = createTranslationNode(translation, settings);
-    if (settings.displayMode === "replace") source.style.display = "none";
+    const sourceText = sourceTexts.get(translation.id) || textWithBreaks(source);
+    source.style.display = settings.displayMode === "replace" ? "none" : "";
     source.insertAdjacentElement("afterend", node);
-    inserted.set(translation.id, { source, node });
+    inserted.set(translation.id, { source, node, sourceText });
+    rendered += 1;
   }
+  return rendered;
 };
 
-const translatePage = async () => {
+const translatePage = async (options: { incremental?: boolean } = {}) => {
   ensureToolbar();
-  const blocks = collectPageBlocks();
-  if (blocks.length === 0) {
-    showToast("没有找到适合翻译的正文内容", "error");
+  const incremental = options.incremental ?? false;
+  if (translatingPage) {
+    pendingPageTranslation = true;
     return;
   }
-  showToast(`正在逐段翻译 ${blocks.length} 段文本...`);
+
+  pageTranslationActive = true;
+  startContinuousTranslation();
+  translatingPage = true;
+
   try {
+    const blocks = collectPageBlocks(document, { onlyUntranslated: true });
+    if (blocks.length === 0) {
+      if (!incremental) showToast(inserted.size > 0 ? "当前页面内容已翻译" : "没有找到适合翻译的正文内容", inserted.size > 0 ? "info" : "error");
+      return;
+    }
+
+    if (!incremental) showToast(`正在逐段翻译 ${blocks.length} 段文本...`);
     const response = await sendMessage<TranslateResponse>({
       type: "TRANSLATE_BATCH",
       blocks: blocks.map(({ id, text }) => ({ id, text }))
     });
-    await renderTranslations(response.translations);
-    showToast(response.cached > 0 ? `翻译完成，${response.cached} 段来自缓存` : "逐段翻译完成");
+    const rendered = await renderTranslations(response.translations, new Map(blocks.map((block) => [block.id, block.text])));
+
+    if (!incremental) {
+      const cacheText = response.cached > 0 ? `，${response.cached} 段来自缓存` : "";
+      showToast(`逐段翻译完成：${rendered}/${blocks.length} 段${cacheText}`);
+    }
   } catch (error) {
+    pageTranslationActive = false;
+    stopContinuousTranslation();
     showToast(error instanceof Error ? error.message : String(error), "error");
+  } finally {
+    translatingPage = false;
+    if (pendingPageTranslation && pageTranslationActive) {
+      pendingPageTranslation = false;
+      scheduleIncrementalTranslation(160);
+    }
   }
 };
 
@@ -358,11 +544,14 @@ chrome.runtime.onMessage.addListener((request: { type: PageCommandType }) => {
 });
 
 if (typeof window !== "undefined") {
-  Object.assign(window, {
+  Object.assign(amazingWindow, {
     __AMAZING_TRANSLATE_DEBUG__: {
       collectPageBlocks,
       translatePage,
-      restorePage
+      restorePage,
+      ensureToolbar
     }
   });
+}
+}
 }

@@ -39,16 +39,27 @@ const translateWithCache = async (blocks: TextBlock[]): Promise<TranslateRespons
   let cached = 0;
   const missing: TextBlock[] = [];
   const missingKeys = new Map<string, string>();
+  const duplicateIds = new Map<string, string[]>();
+  const representativeByKey = new Map<string, TextBlock>();
 
   blocks.forEach((block, index) => {
-    const cachedText = cache[keys[index]];
+    const key = keys[index];
+    const cachedText = cache[key];
     if (cachedText) {
       translations.set(block.id, cachedText);
       cached += 1;
-    } else {
-      missing.push(block);
-      missingKeys.set(block.id, keys[index]);
+      return;
     }
+
+    const representative = representativeByKey.get(key);
+    if (representative) {
+      duplicateIds.set(representative.id, [...(duplicateIds.get(representative.id) || []), block.id]);
+      return;
+    }
+
+    representativeByKey.set(key, block);
+    missing.push(block);
+    missingKeys.set(block.id, key);
   });
 
   const newCacheEntries: Record<string, string> = {};
@@ -56,6 +67,7 @@ const translateWithCache = async (blocks: TextBlock[]): Promise<TranslateRespons
     for (const item of result) {
       if (!item.text) continue;
       translations.set(item.id, item.text);
+      for (const duplicateId of duplicateIds.get(item.id) || []) translations.set(duplicateId, item.text);
       const key = missingKeys.get(item.id);
       if (key && settings.cacheEnabled) newCacheEntries[key] = item.text;
     }
@@ -76,15 +88,26 @@ const translateWithCache = async (blocks: TextBlock[]): Promise<TranslateRespons
   };
 };
 
+const isInjectableTab = (tab: chrome.tabs.Tab): boolean => {
+  const url = tab.url || "";
+  return /^https?:\/\//i.test(url) || /^file:\/\//i.test(url);
+};
+
+const runContentCommand = async (tabId: number, request: RuntimeRequest): Promise<void> => {
+  try {
+    await chrome.tabs.sendMessage(tabId, request);
+    return;
+  } catch {
+    await chrome.scripting.executeScript({ target: { tabId }, files: ["content-script.js"] });
+    await chrome.tabs.sendMessage(tabId, request);
+  }
+};
+
 const sendCommandToActiveTab = async (request: RuntimeRequest): Promise<void> => {
   const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
   if (!tab.id) throw new Error("No active tab found.");
-  try {
-    await chrome.tabs.sendMessage(tab.id, request);
-  } catch {
-    await chrome.scripting.executeScript({ target: { tabId: tab.id }, files: ["content-script.js"] });
-    await chrome.tabs.sendMessage(tab.id, request);
-  }
+  if (!isInjectableTab(tab)) throw new Error("Amazing Translate can only translate normal web pages, not Chrome internal pages.");
+  await runContentCommand(tab.id, request);
 };
 
 chrome.runtime.onInstalled.addListener(() => {
@@ -101,11 +124,9 @@ chrome.runtime.onInstalled.addListener(() => {
 });
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {
-  if (!tab?.id) return;
+  if (!tab?.id || !isInjectableTab(tab)) return;
   const type = info.menuItemId === "translate-editable" ? "TRANSLATE_EDITABLE" : "TRANSLATE_SELECTION";
-  chrome.tabs
-    .sendMessage(tab.id, { type })
-    .catch(() => chrome.scripting.executeScript({ target: { tabId: tab.id! }, files: ["content-script.js"] }).then(() => chrome.tabs.sendMessage(tab.id!, { type })));
+  runContentCommand(tab.id, { type }).catch(console.error);
 });
 
 chrome.commands.onCommand.addListener((command) => {

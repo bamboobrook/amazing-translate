@@ -9,7 +9,9 @@
     "dev": "vite build --watch",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "debug:immersive": "npm run build && node scripts/debug-immersive-layout.mjs"
+    "debug:immersive": "npm run build && node scripts/debug-immersive-layout.mjs",
+    "debug:coindesk": "npm run build && node scripts/debug-coindesk-coverage.mjs",
+    "debug:all": "npm run debug:immersive && npm run debug:coindesk"
   },
   "devDependencies": {
     "@types/chrome": "^0.0.287",
