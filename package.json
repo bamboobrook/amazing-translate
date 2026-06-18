@@ -1,0 +1,21 @@
+{
+  "name": "amazing-translate",
+  "version": "0.1.0",
+  "description": "A personal Chrome MV3 web translation extension for DeepSeek and GLM Coding Plan.",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "vite build",
+    "dev": "vite build --watch",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/chrome": "^0.0.287",
+    "jsdom": "^25.0.1",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.7",
+    "vitest": "^2.1.8",
+    "@types/node": "^22.10.2"
+  }
+}

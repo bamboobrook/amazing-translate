@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="zh-Hans">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Amazing Translate 设置</title>
+    <script type="module" src="/src/options/options.ts"></script>
+  </head>
+  <body>
+    <main class="options-shell">
+      <header>
+        <div>
+          <p class="eyebrow">Amazing Translate</p>
+          <h1>翻译设置</h1>
+        </div>
+        <button id="save" type="button">保存设置</button>
+      </header>
+      <section class="panel">
+        <h2>服务商</h2>
+        <div class="grid two">
+          <label>默认服务商<select id="provider"><option value="deepseek">DeepSeek</option><option value="glm">智谱 GLM Coding</option></select></label>
+          <label>批量字符上限<input id="maxBatchChars" type="number" min="500" max="12000" step="100" /></label>
+        </div>
+      </section>
+      <section class="panel">
+        <h2>DeepSeek</h2>
+        <div class="grid two">
+          <label>API Key<input id="deepseekApiKey" type="password" autocomplete="off" /></label>
+          <label>模型<input id="deepseekModel" type="text" autocomplete="off" /></label>
+          <label class="wide">Base URL<input id="deepseekBaseUrl" type="url" autocomplete="off" /></label>
+        </div>
+      </section>
+      <section class="panel">
+        <h2>智谱 GLM Coding</h2>
+        <div class="grid two">
+          <label>API Key<input id="glmApiKey" type="password" autocomplete="off" /></label>
+          <label>模型<input id="glmModel" type="text" autocomplete="off" /></label>
+          <label class="wide">Base URL<input id="glmBaseUrl" type="url" autocomplete="off" /></label>
+        </div>
+      </section>
+      <section class="panel">
+        <h2>语言与显示</h2>
+        <div class="grid three">
+          <label>源语言<select id="sourceLanguage"></select></label>
+          <label>目标语言<select id="targetLanguage"></select></label>
+          <label>显示模式<select id="displayMode"><option value="below">原文下方显示译文</option><option value="replace">仅显示译文，可恢复</option></select></label>
+        </div>
+        <label class="check"><input id="cacheEnabled" type="checkbox" />启用本地翻译缓存</label>
+      </section>
+      <section class="actions">
+        <button id="test" type="button">测试当前服务商</button>
+        <button id="clearCache" type="button" class="secondary">清空缓存</button>
+        <span id="status" role="status"></span>
+      </section>
+    </main>
+  </body>
+</html>

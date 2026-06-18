@@ -1,0 +1,81 @@
+.amazing-translate-result {
+  margin: 0.35em 0 0.85em;
+  padding: 0.55em 0.75em;
+  border-left: 3px solid #2563eb;
+  background: #eef4ff;
+  color: #16325c;
+  font-size: 0.96em;
+  line-height: 1.65;
+  border-radius: 4px;
+}
+
+.amazing-translate-toolbar {
+  position: fixed;
+  right: 18px;
+  bottom: 18px;
+  z-index: 2147483647;
+  display: flex;
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid #c8d2e4;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 10px 30px rgba(25, 35, 55, 0.18);
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.amazing-translate-toolbar button,
+.amazing-translate-popover button {
+  border: 0;
+  border-radius: 6px;
+  background: #2563eb;
+  color: #ffffff;
+  cursor: pointer;
+  font: inherit;
+  padding: 7px 10px;
+}
+
+.amazing-translate-toolbar button[data-action="restore"] {
+  background: #475569;
+}
+
+.amazing-translate-popover {
+  position: absolute;
+  z-index: 2147483647;
+  box-sizing: border-box;
+  max-width: 360px;
+  padding: 12px;
+  border: 1px solid #c8d2e4;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #1f2937;
+  box-shadow: 0 14px 40px rgba(25, 35, 55, 0.22);
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.amazing-translate-popover-text {
+  margin-bottom: 10px;
+  white-space: pre-wrap;
+}
+
+.amazing-translate-toast {
+  position: fixed;
+  left: 50%;
+  top: 18px;
+  z-index: 2147483647;
+  transform: translateX(-50%);
+  max-width: min(520px, calc(100vw - 32px));
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: #1f2937;
+  color: #ffffff;
+  box-shadow: 0 10px 30px rgba(25, 35, 55, 0.2);
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 14px;
+}
+
+.amazing-translate-toast.error {
+  background: #b42318;
+}

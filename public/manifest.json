@@ -1,0 +1,35 @@
+{
+  "manifest_version": 3,
+  "name": "Amazing Translate",
+  "description": "Personal bilingual web translation with DeepSeek and GLM Coding Plan.",
+  "version": "0.1.0",
+  "minimum_chrome_version": "116",
+  "permissions": [
+    "storage",
+    "activeTab",
+    "scripting",
+    "contextMenus"
+  ],
+  "host_permissions": [
+    "https://api.deepseek.com/*",
+    "https://open.bigmodel.cn/*"
+  ],
+  "background": {
+    "service_worker": "background.js",
+    "type": "module"
+  },
+  "action": {
+    "default_title": "Amazing Translate",
+    "default_popup": "popup.html"
+  },
+  "options_page": "options.html",
+  "commands": {
+    "translate-page": {
+      "suggested_key": {
+        "default": "Alt+Shift+T",
+        "mac": "Alt+Shift+T"
+      },
+      "description": "Translate the current page"
+    }
+  }
+}
