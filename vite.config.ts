@@ -16,7 +16,8 @@ export default defineConfig({
         background: resolve(rootDir, "src/background/service-worker.ts"),
         "content-script": resolve(rootDir, "src/content/content-script.ts"),
         options: resolve(rootDir, "options.html"),
-        popup: resolve(rootDir, "popup.html")
+        popup: resolve(rootDir, "popup.html"),
+        sidepanel: resolve(rootDir, "sidepanel.html")
       },
       output: {
         entryFileNames: (chunk) =>

@@ -5,6 +5,14 @@ import { testProvider, translateBatch } from "./provider";
 const ok = <T>(data: T): RuntimeResponse<T> => ({ ok: true, data });
 const fail = (error: unknown): RuntimeResponse => ({ ok: false, error: error instanceof Error ? error.message : String(error) });
 
+const configureSidePanelBehavior = () => {
+  const sidePanel = (chrome as typeof chrome & {
+    sidePanel?: { setPanelBehavior?: (behavior: { openPanelOnActionClick: boolean }) => Promise<void> | void };
+  }).sidePanel;
+  if (!sidePanel?.setPanelBehavior) return;
+  void Promise.resolve(sidePanel.setPanelBehavior({ openPanelOnActionClick: true })).catch(console.error);
+};
+
 const chunkBlocks = (blocks: TextBlock[], maxChars: number): TextBlock[][] => {
   const chunks: TextBlock[][] = [];
   let current: TextBlock[] = [];
@@ -110,7 +118,10 @@ const sendCommandToActiveTab = async (request: RuntimeRequest): Promise<void> =>
   await runContentCommand(tab.id, request);
 };
 
+configureSidePanelBehavior();
+
 chrome.runtime.onInstalled.addListener(() => {
+  configureSidePanelBehavior();
   chrome.contextMenus.create({
     id: "translate-selection",
     title: "Amazing Translate：翻译选中文本",
@@ -122,6 +133,8 @@ chrome.runtime.onInstalled.addListener(() => {
     contexts: ["editable"]
   });
 });
+
+chrome.runtime.onStartup.addListener(configureSidePanelBehavior);
 
 chrome.contextMenus.onClicked.addListener((info, tab) => {
   if (!tab?.id || !isInjectableTab(tab)) return;

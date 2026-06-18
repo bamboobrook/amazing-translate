@@ -1,14 +1,15 @@
 {
   "manifest_version": 3,
   "name": "Amazing Translate",
-  "description": "Personal bilingual web translation with DeepSeek and GLM Coding Plan.",
+  "description": "Bilingual web translation with DeepSeek and GLM Coding Plan.",
   "version": "0.1.0",
   "minimum_chrome_version": "116",
   "permissions": [
     "storage",
     "activeTab",
     "scripting",
-    "contextMenus"
+    "contextMenus",
+    "sidePanel"
   ],
   "host_permissions": [
     "https://api.deepseek.com/*",
@@ -32,7 +33,12 @@
   ],
   "action": {
     "default_title": "Amazing Translate",
-    "default_popup": "popup.html"
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
   },
   "options_page": "options.html",
   "commands": {
@@ -43,5 +49,14 @@
       },
       "description": "Translate the current page"
     }
+  },
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "side_panel": {
+    "default_path": "sidepanel.html"
   }
 }

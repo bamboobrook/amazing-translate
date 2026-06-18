@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="zh-Hans">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Amazing Translate</title>
+    <script type="module" src="/src/sidepanel/sidepanel.ts"></script>
+  </head>
+  <body>
+    <main class="sidepanel-shell">
+      <header class="app-header">
+        <img src="/icons/icon-48.png" alt="" class="app-icon" />
+        <div>
+          <p class="eyebrow">Amazing Translate</p>
+          <h1>翻译控制台</h1>
+        </div>
+      </header>
+
+      <section class="status-card" aria-live="polite">
+        <div>
+          <span class="label">服务商</span>
+          <strong id="providerSummary">-</strong>
+        </div>
+        <div>
+          <span class="label">语言</span>
+          <strong id="languageSummary">-</strong>
+        </div>
+      </section>
+
+      <section class="panel-section">
+        <div class="section-title">
+          <h2>网页操作</h2>
+          <button id="restorePage" type="button" class="icon-button" title="恢复原文" aria-label="恢复原文">↺</button>
+        </div>
+        <button id="translatePage" type="button" class="primary-action">翻译当前页</button>
+        <div class="quick-grid">
+          <button id="translateSelection" type="button">划词翻译</button>
+          <button id="translateEditable" type="button">输入框翻译</button>
+        </div>
+      </section>
+
+      <section class="panel-section">
+        <h2>语言与显示</h2>
+        <label>
+          源语言
+          <select id="sourceLanguage"></select>
+        </label>
+        <label>
+          目标语言
+          <select id="targetLanguage"></select>
+        </label>
+        <div class="segmented" role="group" aria-label="显示模式">
+          <button id="displayBelow" type="button" data-mode="below">原文下方</button>
+          <button id="displayReplace" type="button" data-mode="replace">替换原文</button>
+        </div>
+      </section>
+
+      <section class="panel-section">
+        <h2>模型配置</h2>
+        <label>
+          服务商
+          <select id="provider">
+            <option value="deepseek">DeepSeek</option>
+            <option value="glm">智谱 GLM Coding</option>
+          </select>
+        </label>
+        <label>
+          API Key
+          <div class="input-row">
+            <input id="apiKey" type="password" autocomplete="off" spellcheck="false" />
+            <button id="toggleKey" type="button" class="icon-button" title="显示或隐藏 API Key" aria-label="显示或隐藏 API Key">◐</button>
+          </div>
+        </label>
+        <label>
+          模型
+          <input id="model" type="text" spellcheck="false" />
+        </label>
+        <details>
+          <summary>高级</summary>
+          <label>
+            Base URL
+            <input id="baseUrl" type="url" spellcheck="false" />
+          </label>
+          <label class="check-row">
+            <input id="cacheEnabled" type="checkbox" />
+            启用本地缓存
+          </label>
+          <label>
+            批量字符上限
+            <input id="maxBatchChars" type="number" min="500" max="12000" step="500" />
+          </label>
+        </details>
+        <div class="quick-grid">
+          <button id="saveSettings" type="button">保存</button>
+          <button id="testProvider" type="button">测试连接</button>
+        </div>
+      </section>
+
+      <footer class="footer-actions">
+        <button id="openOptions" type="button" class="ghost">完整设置</button>
+        <button id="clearCache" type="button" class="ghost">清空缓存</button>
+      </footer>
+
+      <p id="status" role="status"></p>
+    </main>
+  </body>
+</html>

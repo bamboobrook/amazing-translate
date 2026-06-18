@@ -11,7 +11,9 @@
     "typecheck": "tsc --noEmit",
     "debug:immersive": "npm run build && node scripts/debug-immersive-layout.mjs",
     "debug:coindesk": "npm run build && node scripts/debug-coindesk-coverage.mjs",
-    "debug:all": "npm run debug:immersive && npm run debug:coindesk"
+    "debug:all": "npm run debug:immersive && npm run debug:coindesk && npm run debug:sidepanel",
+    "package": "npm run build && python3 scripts/package-extension.py",
+    "debug:sidepanel": "npm run build && node scripts/debug-sidepanel.mjs"
   },
   "devDependencies": {
     "@types/chrome": "^0.0.287",
