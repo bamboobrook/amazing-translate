@@ -1,23 +1,91 @@
-import { sendMessage } from "../shared/runtime";
-import type { ExtensionSettings, PageCommandRequest, TranslateResponse, TranslationResult } from "../shared/types";
-import { collectPageBlocks, findEditableTarget, readEditableText, replaceEditableText } from "./dom";
-import contentCss from "./content.css?inline";
+type PageCommandType = "TRANSLATE_PAGE" | "RESTORE_PAGE" | "TRANSLATE_SELECTION" | "TRANSLATE_EDITABLE";
+
+type DisplayMode = "below" | "replace";
+
+interface ExtensionSettings {
+  displayMode: DisplayMode;
+}
+
+interface TextBlock {
+  id: string;
+  text: string;
+}
+
+interface TranslationResult {
+  id: string;
+  text: string;
+}
+
+interface TranslateResponse {
+  translations: TranslationResult[];
+  cached: number;
+}
+
+interface RuntimeOk<T = unknown> {
+  ok: true;
+  data: T;
+}
+
+interface RuntimeErr {
+  ok: false;
+  error: string;
+}
+
+type RuntimeResponse<T = unknown> = RuntimeOk<T> | RuntimeErr;
+
+type RuntimeRequest =
+  | { type: "GET_SETTINGS" }
+  | { type: "TRANSLATE_BATCH"; blocks: TextBlock[] }
+  | { type: PageCommandType };
+
+interface PageTextBlock extends TextBlock {
+  element: HTMLElement;
+}
 
 interface InsertedTranslation {
   source: HTMLElement;
   node: HTMLElement;
 }
 
+const CONTENT_CSS = `.amazing-translate-result{margin:.35em 0 .85em;padding:.55em .75em;border-left:3px solid #2563eb;background:#eef4ff;color:#16325c;font-size:.96em;line-height:1.65;border-radius:4px}.amazing-translate-toolbar{position:fixed;right:18px;bottom:18px;z-index:2147483647;display:flex;gap:8px;padding:8px;border:1px solid #c8d2e4;border-radius:8px;background:#fff;box-shadow:0 10px 30px rgba(25,35,55,.18);font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.amazing-translate-toolbar button,.amazing-translate-popover button{border:0;border-radius:6px;background:#2563eb;color:#fff;cursor:pointer;font:inherit;padding:7px 10px}.amazing-translate-toolbar button[data-action=restore]{background:#475569}.amazing-translate-popover{position:absolute;z-index:2147483647;box-sizing:border-box;max-width:360px;padding:12px;border:1px solid #c8d2e4;border-radius:8px;background:#fff;color:#1f2937;box-shadow:0 14px 40px rgba(25,35,55,.22);font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:14px;line-height:1.6}.amazing-translate-popover-text{margin-bottom:10px;white-space:pre-wrap}.amazing-translate-toast{position:fixed;left:50%;top:18px;z-index:2147483647;transform:translateX(-50%);max-width:min(520px,calc(100vw - 32px));padding:10px 14px;border-radius:8px;background:#1f2937;color:#fff;box-shadow:0 10px 30px rgba(25,35,55,.2);font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:14px}.amazing-translate-toast.error{background:#b42318}`;
+
+const SKIP_SELECTOR = [
+  "script",
+  "style",
+  "noscript",
+  "svg",
+  "canvas",
+  "pre",
+  "code",
+  "textarea",
+  "input",
+  "select",
+  "button",
+  "[contenteditable='true']",
+  "[data-amazing-translate]",
+  ".amazing-translate-result",
+  ".amazing-translate-popover"
+].join(",");
+
+const BLOCK_SELECTOR = "article p, article li, main p, main li, section p, section li, p, li, blockquote, h1, h2, h3";
+
 const inserted = new Map<string, InsertedTranslation>();
 let popover: HTMLElement | null = null;
 let toolbar: HTMLElement | null = null;
 let stylesInjected = false;
 
+const sendMessage = async <T>(request: RuntimeRequest): Promise<T> => {
+  const response = (await chrome.runtime.sendMessage(request)) as RuntimeResponse<T> | undefined;
+  if (!response) throw new Error("No response from Amazing Translate background service.");
+  if (!response.ok) throw new Error(response.error);
+  return response.data;
+};
+
 const injectStyles = () => {
   if (stylesInjected) return;
   const style = document.createElement("style");
   style.dataset.amazingTranslate = "true";
-  style.textContent = contentCss;
+  style.textContent = CONTENT_CSS;
   document.documentElement.append(style);
   stylesInjected = true;
 };
@@ -31,15 +99,72 @@ const showToast = (message: string, tone: "info" | "error" = "info") => {
   window.setTimeout(() => toast.remove(), 3600);
 };
 
+const isVisible = (element: HTMLElement): boolean => {
+  const style = window.getComputedStyle(element);
+  if (style.display === "none" || style.visibility === "hidden" || style.opacity === "0") return false;
+  const rect = element.getBoundingClientRect();
+  return rect.width > 0 && rect.height > 0;
+};
+
+const hasSkippedAncestor = (element: HTMLElement): boolean => Boolean(element.closest(SKIP_SELECTOR));
+
+const normalizeText = (text: string): string => text.replace(/\s+/g, " ").trim();
+
+const collectPageBlocks = (root: ParentNode = document): PageTextBlock[] => {
+  const candidates = Array.from(root.querySelectorAll<HTMLElement>(BLOCK_SELECTOR));
+  const blocks: PageTextBlock[] = [];
+  const seen = new Set<HTMLElement>();
+
+  for (const element of candidates) {
+    if (seen.has(element) || hasSkippedAncestor(element) || !isVisible(element)) continue;
+    if (element.querySelector("p, li, blockquote")) continue;
+    const text = normalizeText(element.innerText || element.textContent || "");
+    if (text.length < 24 || /^[-–—•\d\s.,:;!?]+$/.test(text)) continue;
+    const id = `block-${blocks.length + 1}`;
+    element.dataset.amazingTranslateId = id;
+    blocks.push({ id, text, element });
+    seen.add(element);
+  }
+  return blocks.slice(0, 120);
+};
+
+const findEditableTarget = (): HTMLTextAreaElement | HTMLInputElement | HTMLElement | null => {
+  const active = document.activeElement;
+  if (!active) return null;
+  if (active instanceof HTMLTextAreaElement) return active;
+  if (active instanceof HTMLInputElement && ["text", "search", "url", "email"].includes(active.type)) return active;
+  if (active instanceof HTMLElement && active.isContentEditable) return active;
+  return null;
+};
+
+const readEditableText = (target: HTMLTextAreaElement | HTMLInputElement | HTMLElement): string => {
+  if (target instanceof HTMLTextAreaElement || target instanceof HTMLInputElement) {
+    const selected = target.value.slice(target.selectionStart || 0, target.selectionEnd || 0).trim();
+    return selected || target.value.trim();
+  }
+  const selection = window.getSelection()?.toString().trim();
+  return selection || target.innerText.trim();
+};
+
+const replaceEditableText = (target: HTMLTextAreaElement | HTMLInputElement | HTMLElement, text: string): void => {
+  if (target instanceof HTMLTextAreaElement || target instanceof HTMLInputElement) {
+    const start = target.selectionStart || 0;
+    const end = target.selectionEnd || 0;
+    if (end > start) target.setRangeText(text, start, end, "end");
+    else target.value = text;
+    target.dispatchEvent(new Event("input", { bubbles: true }));
+    return;
+  }
+  target.innerText = text;
+  target.dispatchEvent(new InputEvent("input", { bubbles: true, inputType: "insertText", data: text }));
+};
+
 const ensureToolbar = () => {
   if (toolbar) return toolbar;
   toolbar = document.createElement("div");
   toolbar.className = "amazing-translate-toolbar";
   toolbar.dataset.amazingTranslate = "true";
-  toolbar.innerHTML = `
-    <button type="button" data-action="translate">翻译</button>
-    <button type="button" data-action="restore">恢复</button>
-  `;
+  toolbar.innerHTML = `<button type="button" data-action="translate">翻译</button><button type="button" data-action="restore">恢复</button>`;
   toolbar.addEventListener("click", (event) => {
     const target = event.target as HTMLElement;
     const action = target.dataset.action;
@@ -131,10 +256,7 @@ const translateSelection = async () => {
     return;
   }
   try {
-    const response = await sendMessage<TranslateResponse>({
-      type: "TRANSLATE_BATCH",
-      blocks: [{ id: "selection", text }]
-    });
+    const response = await sendMessage<TranslateResponse>({ type: "TRANSLATE_BATCH", blocks: [{ id: "selection", text }] });
     showPopover(response.translations[0]?.text || "没有返回译文");
   } catch (error) {
     showToast(error instanceof Error ? error.message : String(error), "error");
@@ -153,10 +275,7 @@ const translateEditable = async () => {
     return;
   }
   try {
-    const response = await sendMessage<TranslateResponse>({
-      type: "TRANSLATE_BATCH",
-      blocks: [{ id: "editable", text }]
-    });
+    const response = await sendMessage<TranslateResponse>({ type: "TRANSLATE_BATCH", blocks: [{ id: "editable", text }] });
     const translated = response.translations[0]?.text || "";
     showPopover(translated || "没有返回译文", { replacement: () => replaceEditableText(target, translated) });
   } catch (error) {
@@ -167,7 +286,7 @@ const translateEditable = async () => {
 injectStyles();
 ensureToolbar();
 
-chrome.runtime.onMessage.addListener((request: PageCommandRequest) => {
+chrome.runtime.onMessage.addListener((request: { type: PageCommandType }) => {
   if (request.type === "TRANSLATE_PAGE") translatePage();
   if (request.type === "RESTORE_PAGE") restorePage();
   if (request.type === "TRANSLATE_SELECTION") translateSelection();
