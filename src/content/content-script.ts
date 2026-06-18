@@ -57,6 +57,7 @@ interface AmazingTranslateDebugApi {
   ensureToolbar: () => HTMLElement;
   closePopover: () => void;
   showSelectionButton: () => void;
+  clearPendingIndicators: () => void;
 }
 
 interface AmazingWindow extends Window {
@@ -72,7 +73,7 @@ if (amazingWindow.__AMAZING_TRANSLATE_LOADED__) {
   amazingWindow.__AMAZING_TRANSLATE_LOADED__ = true;
 
 const CONTENT_CSS = `
-.amazing-translate-result{display:block;margin:.08em 0 .34em;padding:0;border:0;background:transparent;color:#2563eb;font-size:.96em;line-height:1.48;font-weight:400;white-space:pre-wrap}.amazing-translate-result:before{content:"";display:none}.amazing-translate-result[data-display-mode=replace]{margin:.08em 0 .34em;color:#172033}.amazing-translate-result[data-placement=compact-block]{display:block;margin:.04em 0 0;font-size:.92em;line-height:1.28;white-space:normal}.amazing-translate-result[data-placement=compact-inline]{display:inline;margin:0 0 0 .28em;font-size:.9em;line-height:inherit;white-space:normal}.amazing-translate-page-panel{position:fixed;right:16px;bottom:16px;z-index:2147483647;box-sizing:border-box;font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.amazing-translate-page-toggle{display:flex;align-items:center;gap:8px;min-height:42px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;color:#172033;box-shadow:0 16px 38px rgba(20,31,48,.22);cursor:pointer;font:inherit;font-size:13px;font-weight:800;padding:7px 12px 7px 8px}.amazing-translate-page-toggle[data-state=translated]{background:#475569;border-color:#475569;color:#fff}.amazing-translate-page-toggle-mark,.amazing-translate-selection-button-mark{display:grid;place-items:center;width:26px;height:26px;border-radius:7px;background:#0f766e;color:#fff;font-size:11px;font-weight:900;line-height:1}.amazing-translate-page-toggle[data-state=translated] .amazing-translate-page-toggle-mark{background:#fff;color:#475569}.amazing-translate-page-toggle-label{white-space:nowrap}.amazing-translate-selection-button{position:absolute;z-index:2147483647;display:grid;place-items:center;width:30px;height:30px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;color:#172033;box-shadow:0 10px 26px rgba(20,31,48,.24);cursor:pointer;padding:0}.amazing-translate-selection-button-mark{width:22px;height:22px;border-radius:6px;font-size:10px}.amazing-translate-popover{position:absolute;z-index:2147483647;box-sizing:border-box;max-width:360px;padding:12px;border:1px solid #c8d2e4;border-radius:8px;background:#fff;color:#1f2937;box-shadow:0 14px 40px rgba(25,35,55,.22);font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:14px;line-height:1.6}.amazing-translate-popover button{border:0;border-radius:6px;background:#2563eb;color:#fff;cursor:pointer;font:inherit;padding:7px 10px}.amazing-translate-popover-close{position:absolute;top:6px;right:6px;display:grid;place-items:center;width:24px;height:24px;border:0!important;border-radius:6px!important;background:transparent!important;color:#64748b!important;font-size:18px!important;line-height:1!important;padding:0!important}.amazing-translate-popover-text{margin:0 18px 10px 0;white-space:pre-wrap}.amazing-translate-toast{position:fixed;left:50%;top:18px;z-index:2147483647;transform:translateX(-50%);max-width:min(520px,calc(100vw - 32px));padding:10px 14px;border-radius:8px;background:#1f2937;color:#fff;box-shadow:0 10px 30px rgba(25,35,55,.2);font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:14px}.amazing-translate-toast.error{background:#b42318}
+.amazing-translate-result{display:block;margin:.08em 0 .34em;padding:0;border:0;background:transparent;color:inherit;font-size:.96em;line-height:1.48;font-weight:400;white-space:pre-wrap}.amazing-translate-result:before{content:"";display:none}.amazing-translate-result[data-display-mode=replace]{margin:.08em 0 .34em}.amazing-translate-result[data-placement=compact-block]{display:block;margin:.04em 0 0;font-size:.92em;line-height:1.28;white-space:normal}.amazing-translate-result[data-placement=compact-inline]{display:inline;margin:0 0 0 .28em;font-size:.9em;line-height:inherit;white-space:normal}.amazing-translate-pending{display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;margin:.05em 0 .2em;padding:0;border:0;background:transparent;color:inherit;line-height:1}.amazing-translate-pending[data-placement=after]{display:flex;width:1.1em;height:1.1em;margin:.1em 0 .28em}.amazing-translate-pending[data-placement=compact-block]{display:flex;width:1em;height:1em;margin:.05em 0 0}.amazing-translate-pending[data-placement=compact-inline]{width:1em;height:1em;margin:0 0 0 .32em}.amazing-translate-spinner{box-sizing:border-box;width:.82em;height:.82em;border:2px solid currentColor;border-right-color:transparent;border-radius:999px;opacity:.62;animation:amazing-translate-spin .72s linear infinite}@keyframes amazing-translate-spin{to{transform:rotate(360deg)}}.amazing-translate-page-panel{position:fixed;right:16px;top:64vh;z-index:2147483647;box-sizing:border-box;transform:translateY(-50%);font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;touch-action:none}.amazing-translate-page-panel[data-dragging=true]{cursor:grabbing}.amazing-translate-page-toggle{display:flex;align-items:center;gap:8px;min-height:42px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;color:#172033;box-shadow:0 16px 38px rgba(20,31,48,.22);cursor:grab;font:inherit;font-size:13px;font-weight:800;padding:7px 12px 7px 8px;user-select:none}.amazing-translate-page-toggle:active{cursor:grabbing}.amazing-translate-page-toggle[data-state=translated]{background:#475569;border-color:#475569;color:#fff}.amazing-translate-page-toggle-mark,.amazing-translate-selection-button-mark{display:grid;place-items:center;width:26px;height:26px;border-radius:7px;background:#0f766e;color:#fff;font-size:11px;font-weight:900;line-height:1}.amazing-translate-page-toggle[data-state=translated] .amazing-translate-page-toggle-mark{background:#fff;color:#475569}.amazing-translate-page-toggle-label{white-space:nowrap}.amazing-translate-selection-button{position:absolute;z-index:2147483647;display:grid;place-items:center;width:30px;height:30px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;color:#172033;box-shadow:0 10px 26px rgba(20,31,48,.24);cursor:pointer;padding:0}.amazing-translate-selection-button-mark{width:22px;height:22px;border-radius:6px;font-size:10px}.amazing-translate-popover{position:absolute;z-index:2147483647;box-sizing:border-box;max-width:360px;padding:12px;border:1px solid #c8d2e4;border-radius:8px;background:#fff;color:#1f2937;box-shadow:0 14px 40px rgba(25,35,55,.22);font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:14px;line-height:1.6}.amazing-translate-popover button{border:0;border-radius:6px;background:#2563eb;color:#fff;cursor:pointer;font:inherit;padding:7px 10px}.amazing-translate-popover-close{position:absolute;top:6px;right:6px;display:grid;place-items:center;width:24px;height:24px;border:0!important;border-radius:6px!important;background:transparent!important;color:#64748b!important;font-size:18px!important;line-height:1!important;padding:0!important}.amazing-translate-popover-text{margin:0 18px 10px 0;white-space:pre-wrap}.amazing-translate-toast{position:fixed;left:50%;top:18px;z-index:2147483647;transform:translateX(-50%);max-width:min(520px,calc(100vw - 32px));padding:10px 14px;border-radius:8px;background:#1f2937;color:#fff;box-shadow:0 10px 30px rgba(25,35,55,.2);font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:14px}.amazing-translate-toast.error{background:#b42318}
 `;
 
 const MAX_PAGE_BLOCKS = 600;
@@ -152,6 +153,7 @@ const SKIP_SELECTOR = [
 ].join(",");
 
 const inserted = new Map<string, InsertedTranslation>();
+const pendingNodes = new Map<string, HTMLElement>();
 let popover: HTMLElement | null = null;
 let popoverTimer: number | null = null;
 let toolbar: HTMLElement | null = null;
@@ -164,6 +166,11 @@ let translatingPage = false;
 let pendingPageTranslation = false;
 let mutationObserver: MutationObserver | null = null;
 let incrementalTimer: number | null = null;
+let toolbarDragStartY = 0;
+let toolbarDragStartTop = 0;
+let toolbarDragPointerId: number | null = null;
+let toolbarDragMoved = false;
+let ignoreNextToolbarClick = false;
 
 const sendMessage = async <T>(request: RuntimeRequest): Promise<T> => {
   const response = (await chrome.runtime.sendMessage(request)) as RuntimeResponse<T> | undefined;
@@ -276,7 +283,19 @@ const hasSelectedAncestor = (element: HTMLElement): boolean => {
   return Boolean(selected);
 };
 
+const removePendingIndicator = (id: string): void => {
+  const pending = pendingNodes.get(id);
+  pending?.remove();
+  pendingNodes.delete(id);
+};
+
+const clearPendingIndicators = (): void => {
+  for (const pending of pendingNodes.values()) pending.remove();
+  pendingNodes.clear();
+};
+
 const removeInsertedTranslation = (id: string): void => {
+  removePendingIndicator(id);
   const item = inserted.get(id);
   if (!item) return;
   item.source.style.display = "";
@@ -403,13 +422,68 @@ const setToolbarMode = (translated: boolean) => {
   if (label) label.textContent = translated ? "恢复原文" : "翻译网页";
 };
 
+const clampToolbarTop = (top: number): number => {
+  const height = toolbar?.getBoundingClientRect().height || 42;
+  const margin = 24;
+  return Math.min(Math.max(top, margin), Math.max(margin, window.innerHeight - height - margin));
+};
+
+const moveToolbarTo = (top: number): void => {
+  if (!toolbar) return;
+  toolbar.style.top = `${clampToolbarTop(top)}px`;
+  toolbar.style.transform = "none";
+};
+
+const handleToolbarPointerDown = (event: PointerEvent): void => {
+  if (!toolbar || event.button !== 0) return;
+  toolbarDragPointerId = event.pointerId;
+  toolbarDragStartY = event.clientY;
+  toolbarDragMoved = false;
+  const rect = toolbar.getBoundingClientRect();
+  toolbarDragStartTop = rect.top;
+  toolbar.dataset.dragging = "true";
+  toolbar.setPointerCapture?.(event.pointerId);
+};
+
+const handleToolbarPointerMove = (event: PointerEvent): void => {
+  if (!toolbar || toolbarDragPointerId !== event.pointerId) return;
+  const deltaY = event.clientY - toolbarDragStartY;
+  if (Math.abs(deltaY) > 3) toolbarDragMoved = true;
+  if (!toolbarDragMoved) return;
+  event.preventDefault();
+  moveToolbarTo(toolbarDragStartTop + deltaY);
+};
+
+const handleToolbarPointerUp = (event: PointerEvent): void => {
+  if (!toolbar || toolbarDragPointerId !== event.pointerId) return;
+  toolbar.releasePointerCapture?.(event.pointerId);
+  toolbar.dataset.dragging = "false";
+  toolbarDragPointerId = null;
+  if (toolbarDragMoved) {
+    ignoreNextToolbarClick = true;
+    window.setTimeout(() => {
+      ignoreNextToolbarClick = false;
+    }, 0);
+  }
+};
+
 const ensureToolbar = () => {
   if (toolbar) return toolbar;
   toolbar = document.createElement("div");
   toolbar.className = "amazing-translate-page-panel";
   toolbar.dataset.amazingTranslate = "true";
+  toolbar.dataset.dragging = "false";
   toolbar.innerHTML = `<button type="button" class="amazing-translate-page-toggle" data-action="translate" data-state="ready" aria-label="翻译网页"><span class="amazing-translate-page-toggle-mark">AT</span><span class="amazing-translate-page-toggle-label">翻译网页</span></button>`;
+  toolbar.addEventListener("pointerdown", handleToolbarPointerDown);
+  toolbar.addEventListener("pointermove", handleToolbarPointerMove);
+  toolbar.addEventListener("pointerup", handleToolbarPointerUp);
+  toolbar.addEventListener("pointercancel", handleToolbarPointerUp);
   toolbar.addEventListener("click", (event) => {
+    if (ignoreNextToolbarClick) {
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
     const target = event.target as HTMLElement;
     const button = target.closest<HTMLButtonElement>("button[data-action]");
     const action = button?.dataset.action;
@@ -463,6 +537,7 @@ const restorePage = () => {
   pageTranslationActive = false;
   pendingPageTranslation = false;
   stopContinuousTranslation();
+  clearPendingIndicators();
   for (const id of Array.from(inserted.keys())) removeInsertedTranslation(id);
   inserted.clear();
   setToolbarMode(false);
@@ -482,13 +557,21 @@ const chooseTranslationPlacement = (source: HTMLElement, sourceText: string, set
   return "after";
 };
 
-const createTranslationNode = (translation: TranslationResult, settings: ExtensionSettings, placement: TranslationPlacement): HTMLElement => {
+const getSourceTextColor = (source: HTMLElement): string => window.getComputedStyle(source).color || "inherit";
+
+const createTranslationNode = (
+  source: HTMLElement,
+  translation: TranslationResult,
+  settings: ExtensionSettings,
+  placement: TranslationPlacement
+): HTMLElement => {
   const node = document.createElement(placement === "after" ? "div" : "span");
   node.className = "amazing-translate-result";
   node.dataset.amazingTranslate = "true";
   node.dataset.amazingTranslateFor = translation.id;
   node.dataset.displayMode = settings.displayMode;
   node.dataset.placement = placement;
+  node.style.color = getSourceTextColor(source);
   node.textContent = translation.text;
   return node;
 };
@@ -496,6 +579,29 @@ const createTranslationNode = (translation: TranslationResult, settings: Extensi
 const insertTranslationNode = (source: HTMLElement, node: HTMLElement, placement: TranslationPlacement): void => {
   if (placement === "after") source.insertAdjacentElement("afterend", node);
   else source.append(node);
+};
+
+const createPendingIndicator = (source: HTMLElement, id: string, placement: TranslationPlacement): HTMLElement => {
+  const node = document.createElement(placement === "after" ? "div" : "span");
+  node.className = "amazing-translate-pending";
+  node.dataset.amazingTranslate = "true";
+  node.dataset.amazingTranslateFor = id;
+  node.dataset.placement = placement;
+  node.style.color = getSourceTextColor(source);
+  node.setAttribute("aria-label", "正在翻译");
+  node.innerHTML = `<span class="amazing-translate-spinner" aria-hidden="true"></span>`;
+  return node;
+};
+
+const showPendingIndicators = (blocks: PageTextBlock[], settings: ExtensionSettings): void => {
+  for (const block of blocks) {
+    removePendingIndicator(block.id);
+    if (!document.documentElement.contains(block.element)) continue;
+    const placement = chooseTranslationPlacement(block.element, block.text, settings);
+    const node = createPendingIndicator(block.element, block.id, placement);
+    insertTranslationNode(block.element, node, placement);
+    pendingNodes.set(block.id, node);
+  }
 };
 
 const renderTranslations = async (translations: TranslationResult[], sourceTexts = new Map<string, string>()): Promise<number> => {
@@ -511,10 +617,11 @@ const renderTranslations = async (translations: TranslationResult[], sourceTexts
       if (pageTranslationActive) pendingPageTranslation = true;
       continue;
     }
+    removePendingIndicator(translation.id);
     inserted.get(translation.id)?.node.remove();
     const sourceText = expectedSourceText || currentSourceText;
     const placement = chooseTranslationPlacement(source, sourceText, settings);
-    const node = createTranslationNode(translation, settings, placement);
+    const node = createTranslationNode(source, translation, settings, placement);
     source.style.display = settings.displayMode === "replace" ? "none" : "";
     insertTranslationNode(source, node, placement);
     inserted.set(translation.id, { source, node, sourceText });
@@ -543,12 +650,15 @@ const translatePage = async (options: { incremental?: boolean } = {}) => {
       return;
     }
 
+    const settings = await sendMessage<ExtensionSettings>({ type: "GET_SETTINGS" });
+    showPendingIndicators(blocks, settings);
     if (!incremental) showToast(`正在逐段翻译 ${blocks.length} 段文本...`);
     const response = await sendMessage<TranslateResponse>({
       type: "TRANSLATE_BATCH",
       blocks: blocks.map(({ id, text }) => ({ id, text }))
     });
     const rendered = await renderTranslations(response.translations, new Map(blocks.map((block) => [block.id, block.text])));
+    for (const block of blocks) removePendingIndicator(block.id);
 
     if (!incremental) {
       const cacheText = response.cached > 0 ? `，${response.cached} 段来自缓存` : "";
@@ -556,6 +666,7 @@ const translatePage = async (options: { incremental?: boolean } = {}) => {
     }
   } catch (error) {
     pageTranslationActive = false;
+    clearPendingIndicators();
     setToolbarMode(false);
     stopContinuousTranslation();
     showToast(error instanceof Error ? error.message : String(error), "error");
@@ -750,7 +861,8 @@ if (typeof window !== "undefined") {
       restorePage,
       ensureToolbar,
       closePopover,
-      showSelectionButton
+      showSelectionButton,
+      clearPendingIndicators
     }
   });
 }

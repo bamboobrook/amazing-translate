@@ -12,8 +12,8 @@ const html = [
   '    <a href="/stories">View all stories</a>',
   '  </section>',
   '  <article>',
-  '    <h1>A concise heading for immersive translation testing</h1>',
-  '    <p>Modern browser extensions can improve reading workflows without sending every page to a remote service automatically.</p>',
+  '    <h1 style="color:rgb(89, 42, 130)">A concise heading for immersive translation testing</h1>',
+  '    <p style="color:rgb(35, 47, 62)">Modern browser extensions can improve reading workflows without sending every page to a remote service automatically.</p>',
   '    <p>A manual translation flow gives the reader control over cost, privacy, and timing.</p>',
   '    <blockquote>Selected text should stay close to its original paragraph when translated inline.</blockquote>',
   '  </article>',
@@ -28,6 +28,7 @@ const dom = new JSDOM(html, {
 });
 
 const { window } = dom;
+Object.defineProperty(window, 'innerHeight', { value: 800, configurable: true });
 Object.defineProperty(window.HTMLElement.prototype, 'innerText', {
   get() {
     return this.textContent;
@@ -38,10 +39,24 @@ Object.defineProperty(window.HTMLElement.prototype, 'innerText', {
   configurable: true
 });
 window.HTMLElement.prototype.getBoundingClientRect = function () {
-  return { x: 0, y: 0, top: 0, left: 0, right: 640, bottom: 24, width: 640, height: 24, toJSON: () => ({}) };
+  const top = Number.parseFloat(this.style.top || '0') || 0;
+  return { x: 0, y: top, top, left: 0, right: 640, bottom: top + 42, width: 640, height: 42, toJSON: () => ({}) };
 };
 
+if (!window.PointerEvent) {
+  window.PointerEvent = class PointerEvent extends window.MouseEvent {
+    constructor(type, init = {}) {
+      super(type, init);
+      this.pointerId = init.pointerId ?? 1;
+    }
+  };
+}
+
+window.HTMLElement.prototype.setPointerCapture = function () {};
+window.HTMLElement.prototype.releasePointerCapture = function () {};
+
 const capturedBlocks = [];
+let batchDelayMs = 0;
 const selectionRect = { x: 0, y: 0, top: 96, left: 80, right: 300, bottom: 118, width: 220, height: 22, toJSON: () => ({}) };
 const selectionRange = {
   getBoundingClientRect: () => selectionRect,
@@ -59,6 +74,7 @@ window.chrome = {
       if (request.type === 'GET_SETTINGS') return { ok: true, data: { displayMode: 'below' } };
       if (request.type === 'TRANSLATE_BATCH') {
         capturedBlocks.push(...request.blocks);
+        if (batchDelayMs > 0) await new Promise((resolve) => window.setTimeout(resolve, batchDelayMs));
         return {
           ok: true,
           data: {
@@ -85,8 +101,27 @@ selectionButton?.dispatchEvent(new window.Event('click', { bubbles: true }));
 await new Promise((resolve) => window.setTimeout(resolve, 0));
 const selectionPopoverFromButton = window.document.querySelector('.amazing-translate-popover');
 window.__AMAZING_TRANSLATE_DEBUG__.closePopover();
-await window.__AMAZING_TRANSLATE_DEBUG__.translatePage();
+
+const toolbar = window.document.querySelector('.amazing-translate-page-panel');
+const toolbarButton = window.document.querySelector('.amazing-translate-page-toggle');
+const translateMessagesBeforeDrag = capturedBlocks.length;
+toolbar?.dispatchEvent(new window.PointerEvent('pointerdown', { bubbles: true, button: 0, pointerId: 7, clientY: 500 }));
+toolbar?.dispatchEvent(new window.PointerEvent('pointermove', { bubbles: true, button: 0, pointerId: 7, clientY: 610 }));
+toolbar?.dispatchEvent(new window.PointerEvent('pointerup', { bubbles: true, button: 0, pointerId: 7, clientY: 610 }));
+toolbarButton?.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
 await new Promise((resolve) => window.setTimeout(resolve, 0));
+const translateMessagesAfterDrag = capturedBlocks.length;
+const draggedToolbarTop = toolbar?.style.top || '';
+
+batchDelayMs = 25;
+const pageTranslate = window.__AMAZING_TRANSLATE_DEBUG__.translatePage();
+await new Promise((resolve) => window.setTimeout(resolve, 0));
+const pendingDuringTranslate = [...window.document.querySelectorAll('.amazing-translate-pending')];
+await pageTranslate;
+await new Promise((resolve) => window.setTimeout(resolve, 0));
+const pendingAfterTranslate = [...window.document.querySelectorAll('.amazing-translate-pending')];
+batchDelayMs = 0;
+
 const translatedToolbarAction = window.document.querySelector('.amazing-translate-page-toggle')?.getAttribute('data-action');
 const translatedToolbarLabel = window.document.querySelector('.amazing-translate-page-toggle-label')?.textContent || '';
 
@@ -123,12 +158,21 @@ if (!selectionPopover) failures.push('selection translation popover was not show
 if (popoverAfterDebugClose) failures.push('popover did not close through debug close helper');
 if (popoverAfterOutsideClick) failures.push('popover did not close when clicking outside');
 if (translations.length !== capturedBlocks.length - 3) failures.push('expected ' + (capturedBlocks.length - 3) + ' page translation nodes, got ' + translations.length);
+if (pendingDuringTranslate.length === 0) failures.push('expected pending spinners while page translation request is in flight');
+if (pendingAfterTranslate.length !== 0) failures.push('expected pending spinners to be removed after translation');
+if (!draggedToolbarTop || Number.parseFloat(draggedToolbarTop) <= 0) failures.push('expected toolbar to move vertically after drag, got top=' + draggedToolbarTop);
+if (translateMessagesAfterDrag !== translateMessagesBeforeDrag) failures.push('dragging toolbar should not trigger page translation click');
 
 for (const source of sources) {
   const id = source.getAttribute('data-amazing-translate-id');
   const node = translationFor(source);
   if (!node) failures.push(id + ' does not have an adjacent or compact child translation node');
 }
+
+const coloredParagraph = sources.find((source) => source.textContent?.includes('Modern browser extensions'));
+const coloredParagraphTranslation = coloredParagraph ? translationFor(coloredParagraph) : null;
+if (!coloredParagraphTranslation) failures.push('colored source paragraph should have a translation node');
+else if (coloredParagraphTranslation.style.color !== window.getComputedStyle(coloredParagraph).color) failures.push('translation color should match source color');
 
 const featured = [...sources].find((source) => source.textContent?.includes('Featured Stories'));
 const viewAll = [...sources].find((source) => source.textContent?.includes('View all stories'));
@@ -140,4 +184,14 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log(JSON.stringify({ capturedBlocks: capturedBlocks.length, translationNodes: translations.length, compactNodes: translations.filter((node) => node.getAttribute('data-placement') !== 'after').length, selectionButtonShown: Boolean(selectionButton), toolbarAction: translatedToolbarAction, selectionPopoverClosed: !popoverAfterDebugClose && !popoverAfterOutsideClick }, null, 2));
+console.log(JSON.stringify({
+  capturedBlocks: capturedBlocks.length,
+  translationNodes: translations.length,
+  compactNodes: translations.filter((node) => node.getAttribute('data-placement') !== 'after').length,
+  pendingDuringTranslate: pendingDuringTranslate.length,
+  pendingAfterTranslate: pendingAfterTranslate.length,
+  selectionButtonShown: Boolean(selectionButton),
+  toolbarAction: translatedToolbarAction,
+  draggedToolbarTop,
+  selectionPopoverClosed: !popoverAfterDebugClose && !popoverAfterOutsideClick
+}, null, 2));

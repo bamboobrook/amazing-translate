@@ -150,8 +150,13 @@ for (const expected of ['Featured Stories', 'View all stories']) {
 if ((loaded.source !== 'live' || loaded.html.includes('Explore more from CoinDesk')) && !capturedText.includes('Explore more from CoinDesk')) {
   failures.push('expected to capture compact section label: Explore more from CoinDesk');
 }
-if (!capturedText.some((text) => /Live markets: Fed holds rates steady/i.test(text))) failures.push('expected to capture right-side featured list item text');
-if (!capturedText.some((text) => /Kentucky targets prediction markets/i.test(text))) failures.push('expected to capture policy side-list/card text');
+if (loaded.source !== 'live') {
+  if (!capturedText.some((text) => /Live markets: Fed holds rates steady/i.test(text))) failures.push('expected to capture right-side featured list item text');
+  if (!capturedText.some((text) => /Kentucky targets prediction markets/i.test(text))) failures.push('expected to capture policy side-list/card text');
+} else {
+  const liveHeadlineLikeBlocks = capturedBlocks.filter((block) => /markets|bitcoin|ether|crypto|stock|investor|policy|treasury|ETF|XRP/i.test(block.text));
+  if (liveHeadlineLikeBlocks.length < 8) failures.push('expected to capture multiple live Coindesk headline/card blocks, got ' + liveHeadlineLikeBlocks.length);
+}
 if (translations.length !== sources.length) failures.push('expected every current source to have one translation, got ' + translations.length + ' translations for ' + sources.length + ' sources');
 if (!capturedBlocks.some((block) => /President Donald Trump|State Street|Fidelity|Kalshi|stablecoin/i.test(block.text))) {
   failures.push('expected to capture Coindesk card summary/headline text, but did not');
