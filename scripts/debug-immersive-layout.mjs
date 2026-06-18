@@ -100,6 +100,7 @@ const selectionButton = window.document.querySelector('.amazing-translate-select
 selectionButton?.dispatchEvent(new window.Event('click', { bubbles: true }));
 await new Promise((resolve) => window.setTimeout(resolve, 0));
 const selectionPopoverFromButton = window.document.querySelector('.amazing-translate-popover');
+const selectionButtonAfterPopover = window.document.querySelector('.amazing-translate-selection-button');
 window.__AMAZING_TRANSLATE_DEBUG__.closePopover();
 
 const toolbar = window.document.querySelector('.amazing-translate-page-panel');
@@ -112,6 +113,16 @@ toolbarButton?.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
 await new Promise((resolve) => window.setTimeout(resolve, 0));
 const translateMessagesAfterDrag = capturedBlocks.length;
 const draggedToolbarTop = toolbar?.style.top || '';
+
+await new Promise((resolve) => window.setTimeout(resolve, 150));
+const translateMessagesBeforeToolbarClick = capturedBlocks.length;
+toolbarButton?.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+await new Promise((resolve) => window.setTimeout(resolve, 30));
+const translateMessagesAfterToolbarClick = capturedBlocks.length;
+const toolbarActionAfterClick = window.document.querySelector('.amazing-translate-page-toggle')?.getAttribute('data-action');
+window.__AMAZING_TRANSLATE_DEBUG__.restorePage();
+await new Promise((resolve) => window.setTimeout(resolve, 0));
+const toolbarActionAfterRestore = window.document.querySelector('.amazing-translate-page-toggle')?.getAttribute('data-action');
 
 batchDelayMs = 25;
 const pageTranslate = window.__AMAZING_TRANSLATE_DEBUG__.translatePage();
@@ -154,14 +165,18 @@ if (initialToolbarActions.length !== 1 || initialToolbarActions[0] !== 'translat
 if (translatedToolbarAction !== 'restore' || !translatedToolbarLabel.includes('恢复原文')) failures.push('expected toolbar to switch to restore after translating page');
 if (!selectionButton) failures.push('selection AT button was not shown');
 if (!selectionPopoverFromButton) failures.push('selection AT button did not open translation popover');
+if (selectionButtonAfterPopover) failures.push('selection AT button should disappear while translation popover is visible');
 if (!selectionPopover) failures.push('selection translation popover was not shown');
 if (popoverAfterDebugClose) failures.push('popover did not close through debug close helper');
 if (popoverAfterOutsideClick) failures.push('popover did not close when clicking outside');
-if (translations.length !== capturedBlocks.length - 3) failures.push('expected ' + (capturedBlocks.length - 3) + ' page translation nodes, got ' + translations.length);
+if (translations.length !== pendingDuringTranslate.length) failures.push('expected ' + pendingDuringTranslate.length + ' page translation nodes, got ' + translations.length);
 if (pendingDuringTranslate.length === 0) failures.push('expected pending spinners while page translation request is in flight');
 if (pendingAfterTranslate.length !== 0) failures.push('expected pending spinners to be removed after translation');
 if (!draggedToolbarTop || Number.parseFloat(draggedToolbarTop) <= 0) failures.push('expected toolbar to move vertically after drag, got top=' + draggedToolbarTop);
 if (translateMessagesAfterDrag !== translateMessagesBeforeDrag) failures.push('dragging toolbar should not trigger page translation click');
+if (translateMessagesAfterToolbarClick <= translateMessagesBeforeToolbarClick) failures.push('plain toolbar button click should trigger page translation');
+if (toolbarActionAfterClick !== 'restore') failures.push('plain toolbar click should switch action to restore, got ' + toolbarActionAfterClick);
+if (toolbarActionAfterRestore !== 'translate') failures.push('restorePage should reset toolbar action to translate, got ' + toolbarActionAfterRestore);
 
 for (const source of sources) {
   const id = source.getAttribute('data-amazing-translate-id');
@@ -192,6 +207,8 @@ console.log(JSON.stringify({
   pendingAfterTranslate: pendingAfterTranslate.length,
   selectionButtonShown: Boolean(selectionButton),
   toolbarAction: translatedToolbarAction,
+  toolbarActionAfterClick,
+  toolbarActionAfterRestore,
   draggedToolbarTop,
   selectionPopoverClosed: !popoverAfterDebugClose && !popoverAfterOutsideClick
 }, null, 2));
