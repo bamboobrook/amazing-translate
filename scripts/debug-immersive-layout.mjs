@@ -42,8 +42,10 @@ window.HTMLElement.prototype.getBoundingClientRect = function () {
 };
 
 const capturedBlocks = [];
+const selectionRect = { x: 0, y: 0, top: 96, left: 80, right: 300, bottom: 118, width: 220, height: 22, toJSON: () => ({}) };
 const selectionRange = {
-  getBoundingClientRect: () => ({ x: 0, y: 0, top: 96, left: 80, right: 300, bottom: 118, width: 220, height: 22, toJSON: () => ({}) })
+  getBoundingClientRect: () => selectionRect,
+  getClientRects: () => [selectionRect]
 };
 let selectedText = 'Selected text should close automatically after translation';
 window.getSelection = () => ({
@@ -75,8 +77,18 @@ window.chrome = {
 };
 
 window.eval(readFileSync('dist/content-script.js', 'utf8'));
+const initialToolbarActions = [...window.document.querySelectorAll('.amazing-translate-page-panel button[data-action]')].map((button) => button.getAttribute('data-action'));
+window.__AMAZING_TRANSLATE_DEBUG__.showSelectionButton();
+await new Promise((resolve) => window.setTimeout(resolve, 0));
+const selectionButton = window.document.querySelector('.amazing-translate-selection-button');
+selectionButton?.dispatchEvent(new window.Event('click', { bubbles: true }));
+await new Promise((resolve) => window.setTimeout(resolve, 0));
+const selectionPopoverFromButton = window.document.querySelector('.amazing-translate-popover');
+window.__AMAZING_TRANSLATE_DEBUG__.closePopover();
 await window.__AMAZING_TRANSLATE_DEBUG__.translatePage();
 await new Promise((resolve) => window.setTimeout(resolve, 0));
+const translatedToolbarAction = window.document.querySelector('.amazing-translate-page-toggle')?.getAttribute('data-action');
+const translatedToolbarLabel = window.document.querySelector('.amazing-translate-page-toggle-label')?.textContent || '';
 
 window.chrome.runtime.onMessage._listener({ type: 'TRANSLATE_SELECTION' });
 await new Promise((resolve) => window.setTimeout(resolve, 0));
@@ -103,10 +115,14 @@ for (const expected of ['News', 'Video', 'Prices', 'Featured Stories', 'View all
   if (!capturedText.includes(expected)) failures.push('expected to capture compact/navigation label: ' + expected);
 }
 if (!capturedText.some((text) => /Modern browser extensions/.test(text))) failures.push('expected article paragraph text to be captured');
+if (initialToolbarActions.length !== 1 || initialToolbarActions[0] !== 'translate') failures.push('expected default toolbar to expose one translate button, got ' + initialToolbarActions.join(','));
+if (translatedToolbarAction !== 'restore' || !translatedToolbarLabel.includes('恢复原文')) failures.push('expected toolbar to switch to restore after translating page');
+if (!selectionButton) failures.push('selection AT button was not shown');
+if (!selectionPopoverFromButton) failures.push('selection AT button did not open translation popover');
 if (!selectionPopover) failures.push('selection translation popover was not shown');
 if (popoverAfterDebugClose) failures.push('popover did not close through debug close helper');
 if (popoverAfterOutsideClick) failures.push('popover did not close when clicking outside');
-if (translations.length !== capturedBlocks.length - 2) failures.push('expected ' + (capturedBlocks.length - 2) + ' page translation nodes, got ' + translations.length);
+if (translations.length !== capturedBlocks.length - 3) failures.push('expected ' + (capturedBlocks.length - 3) + ' page translation nodes, got ' + translations.length);
 
 for (const source of sources) {
   const id = source.getAttribute('data-amazing-translate-id');
@@ -124,4 +140,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log(JSON.stringify({ capturedBlocks: capturedBlocks.length, translationNodes: translations.length, compactNodes: translations.filter((node) => node.getAttribute('data-placement') !== 'after').length, selectionPopoverClosed: !popoverAfterDebugClose && !popoverAfterOutsideClick }, null, 2));
+console.log(JSON.stringify({ capturedBlocks: capturedBlocks.length, translationNodes: translations.length, compactNodes: translations.filter((node) => node.getAttribute('data-placement') !== 'after').length, selectionButtonShown: Boolean(selectionButton), toolbarAction: translatedToolbarAction, selectionPopoverClosed: !popoverAfterDebugClose && !popoverAfterOutsideClick }, null, 2));

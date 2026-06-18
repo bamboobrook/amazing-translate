@@ -56,6 +56,7 @@ interface AmazingTranslateDebugApi {
   restorePage: () => void;
   ensureToolbar: () => HTMLElement;
   closePopover: () => void;
+  showSelectionButton: () => void;
 }
 
 interface AmazingWindow extends Window {
@@ -71,7 +72,7 @@ if (amazingWindow.__AMAZING_TRANSLATE_LOADED__) {
   amazingWindow.__AMAZING_TRANSLATE_LOADED__ = true;
 
 const CONTENT_CSS = `
-.amazing-translate-result{display:block;margin:.08em 0 .34em;padding:0;border:0;background:transparent;color:#2563eb;font-size:.96em;line-height:1.48;font-weight:400;white-space:pre-wrap}.amazing-translate-result:before{content:"";display:none}.amazing-translate-result[data-display-mode=replace]{margin:.08em 0 .34em;color:#172033}.amazing-translate-result[data-placement=compact-block]{display:block;margin:.04em 0 0;font-size:.92em;line-height:1.28;white-space:normal}.amazing-translate-result[data-placement=compact-inline]{display:inline;margin:0 0 0 .28em;font-size:.9em;line-height:inherit;white-space:normal}.amazing-translate-page-panel{position:fixed;right:16px;bottom:16px;z-index:2147483647;box-sizing:border-box;width:214px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;color:#172033;box-shadow:0 18px 42px rgba(20,31,48,.2);font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:13px;line-height:1.35;overflow:hidden}.amazing-translate-page-panel[data-collapsed=true]{width:auto}.amazing-translate-page-panel[data-collapsed=true] .amazing-translate-page-panel-body,.amazing-translate-page-panel[data-collapsed=true] .amazing-translate-page-panel-title small{display:none}.amazing-translate-page-panel-header{display:flex;align-items:center;gap:8px;padding:9px 10px;border-bottom:1px solid #e2e8f0;background:#f8fafc}.amazing-translate-page-panel-mark{display:grid;place-items:center;width:26px;height:26px;border-radius:7px;background:#0f766e;color:#fff;font-size:11px;font-weight:800}.amazing-translate-page-panel-title{display:grid;min-width:0;flex:1}.amazing-translate-page-panel-title strong{font-size:13px;line-height:1.1}.amazing-translate-page-panel-title small{color:#64748b;font-size:11px;line-height:1.3}.amazing-translate-page-panel-toggle{display:grid;place-items:center;flex:0 0 28px;width:28px;height:28px;min-width:28px;min-height:28px;border:1px solid #cbd5e1;border-radius:6px;background:#fff;color:#0f766e;cursor:pointer;font:inherit;font-size:18px;font-weight:800;line-height:1;padding:0}.amazing-translate-page-panel-toggle svg{display:block;width:14px;height:14px;stroke:currentColor;stroke-width:2.4;stroke-linecap:round}.amazing-translate-page-panel-body{display:grid;gap:8px;padding:10px}.amazing-translate-page-panel-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}.amazing-translate-page-panel button{font-family:inherit}.amazing-translate-page-panel-action{min-height:34px;border:1px solid #cbd5e1;border-radius:6px;background:#fff;color:#172033;cursor:pointer;font-size:12px;font-weight:760;padding:7px 8px}.amazing-translate-page-panel-action.primary{border-color:#0f766e;background:#0f766e;color:#fff}.amazing-translate-page-panel-action.secondary{background:#475569;border-color:#475569;color:#fff}.amazing-translate-popover{position:absolute;z-index:2147483647;box-sizing:border-box;max-width:360px;padding:12px;border:1px solid #c8d2e4;border-radius:8px;background:#fff;color:#1f2937;box-shadow:0 14px 40px rgba(25,35,55,.22);font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:14px;line-height:1.6}.amazing-translate-popover button{border:0;border-radius:6px;background:#2563eb;color:#fff;cursor:pointer;font:inherit;padding:7px 10px}.amazing-translate-popover-close{position:absolute;top:6px;right:6px;display:grid;place-items:center;width:24px;height:24px;border:0!important;border-radius:6px!important;background:transparent!important;color:#64748b!important;font-size:18px!important;line-height:1!important;padding:0!important}.amazing-translate-popover-text{margin:0 18px 10px 0;white-space:pre-wrap}.amazing-translate-toast{position:fixed;left:50%;top:18px;z-index:2147483647;transform:translateX(-50%);max-width:min(520px,calc(100vw - 32px));padding:10px 14px;border-radius:8px;background:#1f2937;color:#fff;box-shadow:0 10px 30px rgba(25,35,55,.2);font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:14px}.amazing-translate-toast.error{background:#b42318}
+.amazing-translate-result{display:block;margin:.08em 0 .34em;padding:0;border:0;background:transparent;color:#2563eb;font-size:.96em;line-height:1.48;font-weight:400;white-space:pre-wrap}.amazing-translate-result:before{content:"";display:none}.amazing-translate-result[data-display-mode=replace]{margin:.08em 0 .34em;color:#172033}.amazing-translate-result[data-placement=compact-block]{display:block;margin:.04em 0 0;font-size:.92em;line-height:1.28;white-space:normal}.amazing-translate-result[data-placement=compact-inline]{display:inline;margin:0 0 0 .28em;font-size:.9em;line-height:inherit;white-space:normal}.amazing-translate-page-panel{position:fixed;right:16px;bottom:16px;z-index:2147483647;box-sizing:border-box;font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}.amazing-translate-page-toggle{display:flex;align-items:center;gap:8px;min-height:42px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;color:#172033;box-shadow:0 16px 38px rgba(20,31,48,.22);cursor:pointer;font:inherit;font-size:13px;font-weight:800;padding:7px 12px 7px 8px}.amazing-translate-page-toggle[data-state=translated]{background:#475569;border-color:#475569;color:#fff}.amazing-translate-page-toggle-mark,.amazing-translate-selection-button-mark{display:grid;place-items:center;width:26px;height:26px;border-radius:7px;background:#0f766e;color:#fff;font-size:11px;font-weight:900;line-height:1}.amazing-translate-page-toggle[data-state=translated] .amazing-translate-page-toggle-mark{background:#fff;color:#475569}.amazing-translate-page-toggle-label{white-space:nowrap}.amazing-translate-selection-button{position:absolute;z-index:2147483647;display:grid;place-items:center;width:30px;height:30px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;color:#172033;box-shadow:0 10px 26px rgba(20,31,48,.24);cursor:pointer;padding:0}.amazing-translate-selection-button-mark{width:22px;height:22px;border-radius:6px;font-size:10px}.amazing-translate-popover{position:absolute;z-index:2147483647;box-sizing:border-box;max-width:360px;padding:12px;border:1px solid #c8d2e4;border-radius:8px;background:#fff;color:#1f2937;box-shadow:0 14px 40px rgba(25,35,55,.22);font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:14px;line-height:1.6}.amazing-translate-popover button{border:0;border-radius:6px;background:#2563eb;color:#fff;cursor:pointer;font:inherit;padding:7px 10px}.amazing-translate-popover-close{position:absolute;top:6px;right:6px;display:grid;place-items:center;width:24px;height:24px;border:0!important;border-radius:6px!important;background:transparent!important;color:#64748b!important;font-size:18px!important;line-height:1!important;padding:0!important}.amazing-translate-popover-text{margin:0 18px 10px 0;white-space:pre-wrap}.amazing-translate-toast{position:fixed;left:50%;top:18px;z-index:2147483647;transform:translateX(-50%);max-width:min(520px,calc(100vw - 32px));padding:10px 14px;border-radius:8px;background:#1f2937;color:#fff;box-shadow:0 10px 30px rgba(25,35,55,.2);font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:14px}.amazing-translate-toast.error{background:#b42318}
 `;
 
 const MAX_PAGE_BLOCKS = 600;
@@ -154,6 +155,8 @@ const inserted = new Map<string, InsertedTranslation>();
 let popover: HTMLElement | null = null;
 let popoverTimer: number | null = null;
 let toolbar: HTMLElement | null = null;
+let selectionButton: HTMLButtonElement | null = null;
+let selectionButtonTimer: number | null = null;
 let stylesInjected = false;
 let nextBlockId = 1;
 let pageTranslationActive = false;
@@ -280,6 +283,7 @@ const removeInsertedTranslation = (id: string): void => {
   delete item.source.dataset.amazingTranslateId;
   item.node.remove();
   inserted.delete(id);
+  if (inserted.size === 0 && !pageTranslationActive) setToolbarMode(false);
 };
 
 const isTranslationCurrent = (element: HTMLElement, text: string): boolean => {
@@ -389,31 +393,31 @@ const replaceEditableText = (target: HTMLTextAreaElement | HTMLInputElement | HT
   target.dispatchEvent(new InputEvent("input", { bubbles: true, inputType: "insertText", data: text }));
 };
 
+const setToolbarMode = (translated: boolean) => {
+  const button = toolbar?.querySelector<HTMLButtonElement>(".amazing-translate-page-toggle");
+  if (!button) return;
+  button.dataset.state = translated ? "translated" : "ready";
+  button.dataset.action = translated ? "restore" : "translate";
+  button.setAttribute("aria-label", translated ? "恢复原文" : "翻译网页");
+  const label = button.querySelector<HTMLElement>(".amazing-translate-page-toggle-label");
+  if (label) label.textContent = translated ? "恢复原文" : "翻译网页";
+};
+
 const ensureToolbar = () => {
   if (toolbar) return toolbar;
   toolbar = document.createElement("div");
   toolbar.className = "amazing-translate-page-panel";
   toolbar.dataset.amazingTranslate = "true";
-  toolbar.innerHTML = `<div class="amazing-translate-page-panel-header"><span class="amazing-translate-page-panel-mark">AT</span><span class="amazing-translate-page-panel-title"><strong>Amazing Translate</strong><small>当前页翻译</small></span><button type="button" class="amazing-translate-page-panel-toggle" data-action="toggle" aria-label="收起或展开"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 8h8"/></svg></button></div><div class="amazing-translate-page-panel-body"><button type="button" class="amazing-translate-page-panel-action primary" data-action="translate">翻译网页</button><div class="amazing-translate-page-panel-grid"><button type="button" class="amazing-translate-page-panel-action" data-action="selection">划词</button><button type="button" class="amazing-translate-page-panel-action" data-action="editable">输入框</button></div><button type="button" class="amazing-translate-page-panel-action secondary" data-action="restore">恢复原文</button></div>`;
+  toolbar.innerHTML = `<button type="button" class="amazing-translate-page-toggle" data-action="translate" data-state="ready" aria-label="翻译网页"><span class="amazing-translate-page-toggle-mark">AT</span><span class="amazing-translate-page-toggle-label">翻译网页</span></button>`;
   toolbar.addEventListener("click", (event) => {
     const target = event.target as HTMLElement;
     const button = target.closest<HTMLButtonElement>("button[data-action]");
     const action = button?.dataset.action;
-    if (!action) return;
-    if (action === "toggle") {
-      const collapsed = toolbar?.dataset.collapsed === "true";
-      if (toolbar) toolbar.dataset.collapsed = String(!collapsed);
-      button.innerHTML = collapsed
-        ? `<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 8h8"/></svg>`
-        : `<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 4v8M4 8h8"/></svg>`;
-      return;
-    }
     if (action === "translate") translatePage();
-    if (action === "selection") translateSelection();
-    if (action === "editable") translateEditable();
     if (action === "restore") restorePage();
   });
   document.documentElement.append(toolbar);
+  setToolbarMode(inserted.size > 0 || pageTranslationActive);
   return toolbar;
 };
 
@@ -461,6 +465,7 @@ const restorePage = () => {
   stopContinuousTranslation();
   for (const id of Array.from(inserted.keys())) removeInsertedTranslation(id);
   inserted.clear();
+  setToolbarMode(false);
   showToast("已恢复原文");
 };
 
@@ -527,6 +532,7 @@ const translatePage = async (options: { incremental?: boolean } = {}) => {
   }
 
   pageTranslationActive = true;
+  setToolbarMode(true);
   startContinuousTranslation();
   translatingPage = true;
 
@@ -550,6 +556,7 @@ const translatePage = async (options: { incremental?: boolean } = {}) => {
     }
   } catch (error) {
     pageTranslationActive = false;
+    setToolbarMode(false);
     stopContinuousTranslation();
     showToast(error instanceof Error ? error.message : String(error), "error");
   } finally {
@@ -559,6 +566,58 @@ const translatePage = async (options: { incremental?: boolean } = {}) => {
       scheduleIncrementalTranslation(160);
     }
   }
+};
+
+const getSelectionRect = (): DOMRect | null => {
+  const selection = window.getSelection();
+  if (!selection || selection.isCollapsed || selection.rangeCount === 0 || !selection.toString().trim()) return null;
+  const range = selection.getRangeAt(0);
+  const rects = Array.from(range.getClientRects()).filter((rect) => rect.width > 0 && rect.height > 0);
+  return rects[rects.length - 1] || range.getBoundingClientRect();
+};
+
+const closeSelectionButton = () => {
+  if (selectionButtonTimer !== null) window.clearTimeout(selectionButtonTimer);
+  selectionButtonTimer = null;
+  selectionButton?.remove();
+  selectionButton = null;
+};
+
+const scheduleSelectionButtonClose = () => {
+  if (selectionButtonTimer !== null) window.clearTimeout(selectionButtonTimer);
+  selectionButtonTimer = window.setTimeout(closeSelectionButton, 8000);
+};
+
+const positionSelectionButton = (rect: DOMRect) => {
+  if (!selectionButton) return;
+  const top = window.scrollY + rect.bottom + 8;
+  const left = window.scrollX + Math.min(rect.left + rect.width / 2 - 15, window.innerWidth - 46);
+  selectionButton.style.top = `${Math.max(16, top)}px`;
+  selectionButton.style.left = `${Math.max(16, left)}px`;
+};
+
+const showSelectionButton = () => {
+  const rect = getSelectionRect();
+  if (!rect) {
+    closeSelectionButton();
+    return;
+  }
+  if (!selectionButton) {
+    selectionButton = document.createElement("button");
+    selectionButton.type = "button";
+    selectionButton.className = "amazing-translate-selection-button";
+    selectionButton.dataset.amazingTranslate = "true";
+    selectionButton.setAttribute("aria-label", "翻译选中文本");
+    selectionButton.innerHTML = `<span class="amazing-translate-selection-button-mark">AT</span>`;
+    selectionButton.addEventListener("pointerdown", (event) => event.stopPropagation());
+    selectionButton.addEventListener("click", () => {
+      closeSelectionButton();
+      void translateSelection();
+    });
+    document.documentElement.append(selectionButton);
+  }
+  positionSelectionButton(rect);
+  scheduleSelectionButtonClose();
 };
 
 const closePopover = () => {
@@ -649,15 +708,31 @@ const translateEditable = async () => {
 injectStyles();
 ensureToolbar();
 
+document.addEventListener("selectionchange", () => {
+  window.setTimeout(showSelectionButton, 80);
+});
+
+document.addEventListener("pointerup", () => {
+  window.setTimeout(showSelectionButton, 80);
+});
+
 document.addEventListener("pointerdown", (event) => {
-  if (!popover) return;
   const target = event.target;
-  if (target instanceof Node && popover.contains(target)) return;
+  if (selectionButton && target instanceof Node && selectionButton.contains(target)) return;
+  if (popover && target instanceof Node && popover.contains(target)) return;
+  closeSelectionButton();
   closePopover();
 });
 
+document.addEventListener("scroll", closeSelectionButton, true);
+
+window.addEventListener("resize", closeSelectionButton);
+
 document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape") closePopover();
+  if (event.key === "Escape") {
+    closeSelectionButton();
+    closePopover();
+  }
 });
 
 chrome.runtime.onMessage.addListener((request: { type: PageCommandType }) => {
@@ -674,7 +749,8 @@ if (typeof window !== "undefined") {
       translatePage,
       restorePage,
       ensureToolbar,
-      closePopover
+      closePopover,
+      showSelectionButton
     }
   });
 }
