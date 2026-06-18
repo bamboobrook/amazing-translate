@@ -233,6 +233,8 @@ const isMetadataOnlyText = (text: string): boolean => {
   const compact = text.replace(/\s+/g, "").trim();
   if (!compact) return true;
   if (/^[\d年月日号:：,.，。/\-–—·@A-Za-z_\s]+$/.test(compact) && /[年月日]|@/.test(compact)) return true;
+  if (/^@[A-Za-z0-9_.-]+(?:[·•]\d+(?:秒|分钟|小时|天|周|月|年)前?)?$/u.test(compact)) return true;
+  if (/^©?\d{4}[A-Za-z\s.]+$/i.test(compact)) return true;
   if (/^(by|updated|published|sponsored by|advertisement|sign up|log in|subscribe)\b/i.test(text)) return true;
   if (/^by\s+[A-Z][A-Za-z .-]+[A-Z][a-z]{2}\s+\d{1,2},\s+\d{4}$/i.test(text)) return true;
   return false;
@@ -251,8 +253,10 @@ const isTargetChineseText = (han: number, latin: number): boolean => {
   if (han < 2) return false;
   if (latin === 0) return true;
   if (han >= 2 && latin <= 4) return true;
+  if (han >= 2 && latin <= 8) return true;
   if (han >= 4 && latin <= 12) return true;
-  return han >= 6 && han >= latin * 0.8;
+  if (han >= 12 && han >= latin * 0.45) return true;
+  return han >= 24 && han >= latin * 0.3;
 };
 
 const isLikelyTargetLanguageText = (text: string, targetLanguage = DEFAULT_TARGET_LANGUAGE): boolean => {
@@ -305,6 +309,13 @@ const getElementMetadata = (element: HTMLElement): string =>
     .join(" ");
 
 const isFixedSidebarChrome = (element: HTMLElement): boolean => {
+  const navigation = element.closest<HTMLElement>("nav,[role='navigation']");
+  const navigationLabel = navigation?.getAttribute("aria-label")?.trim().toLowerCase() || "";
+  if (["主要", "primary", "main", "页脚", "footer"].includes(navigationLabel)) return true;
+
+  const tabChrome = element.closest<HTMLElement>("[role='tablist'],[role='tab']");
+  if (tabChrome) return true;
+
   const viewportWidth = window.innerWidth || document.documentElement.clientWidth || 1024;
   const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 768;
 

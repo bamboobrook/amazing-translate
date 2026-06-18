@@ -7,7 +7,7 @@ const html = [
   '  <nav style="display:flex;gap:24px"><a href="/news">News</a><a href="/video">Video</a><a href="/prices">Prices</a></nav>',
   '</header>',
   '<header role="banner" class="x-sidebar-shell" style="position:fixed;left:0;top:0;width:220px;height:760px">',
-  '<nav role="navigation" class="x-sidebar" style="display:flex;flex-direction:column">',
+  '<nav role="navigation" aria-label="主要" class="x-sidebar" style="display:flex;flex-direction:column">',
   '  <a href="/i/grok">Grok</a>',
   '  <a href="/i/bookmarks">书签</a>',
   '  <a href="/i/premium">Premium</a>',
@@ -15,6 +15,7 @@ const html = [
   '</nav>',
   '</header>',
   '<main>',
+  '  <div role="tablist"><div role="tab">为你推荐</div><div role="tab">正在关注</div><div role="tab">COSMOS</div></div>',
   '  <section style="display:flex;justify-content:space-between;align-items:center">',
   '    <h2>Featured Stories</h2>',
   '    <a href="/stories">View all stories</a>',
@@ -29,6 +30,9 @@ const html = [
   '    <p>这是中文内容，目标语言是中文时不应该再次翻译，也不应该产生重复译文。</p>',
   '    <p>Try it out today because the AI demo is live and the audience can inspect every result.</p>',
   '    <p>Welcome to Computex, 全球最大的 AI 展览.</p>',
+  '    <p>@arkuy99 · 1小时</p>',
+  '    <p>所有给我 claude code settings 写 hooks 的第三方软件我全卸载了。</p>',
+  '    <p>OpenAI 额度消耗绝逼有问题！半小时不到，5h 额度干光。</p>',
   '  </article>',
   '</main>',
   '</body></html>'
@@ -180,7 +184,20 @@ for (const expected of ['News', 'Video', 'Prices', 'Featured Stories', 'View all
 if (!capturedText.some((text) => /Modern browser extensions/.test(text))) failures.push('expected article paragraph text to be captured');
 if (!capturedText.some((text) => /Try it out today/.test(text))) failures.push('expected English X-style post text to be captured');
 if (!capturedText.some((text) => /Welcome to Computex/.test(text))) failures.push('expected English-dominant mixed text to be captured');
-for (const unexpected of ['Grok', 'Premium', '书签', '个人资料', 'X 上的直播', '比特币按预期暴跌，后续怎么看？水哥盈利300万！']) {
+for (const unexpected of [
+  'Grok',
+  'Premium',
+  '书签',
+  '个人资料',
+  'X 上的直播',
+  '比特币按预期暴跌，后续怎么看？水哥盈利300万！',
+  '为你推荐',
+  '正在关注',
+  'COSMOS',
+  '@arkuy99 · 1小时',
+  '所有给我 claude code settings 写 hooks 的第三方软件我全卸载了。',
+  'OpenAI 额度消耗绝逼有问题！半小时不到，5h 额度干光。'
+]) {
   if (capturedText.includes(unexpected)) failures.push('expected to skip target-language or fixed-sidebar text: ' + unexpected);
 }
 if (capturedText.some((text) => /目标语言是中文时不应该再次翻译|6月10日/.test(text))) failures.push('expected Chinese target-language content and metadata to be skipped');
