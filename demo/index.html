@@ -7,33 +7,75 @@
     <style>
       :root { color-scheme: light; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #202124; background: #f7f8fa; }
       body { margin: 0; }
-      main { max-width: 880px; margin: 0 auto; padding: 48px 20px 72px; }
-      header { margin-bottom: 32px; }
-      h1 { font-size: 36px; line-height: 1.1; margin: 0 0 12px; }
-      p, li, textarea { font-size: 17px; line-height: 1.7; }
-      section { background: #fff; border: 1px solid #d9dee8; border-radius: 8px; margin-top: 18px; padding: 24px; }
-      textarea { box-sizing: border-box; width: 100%; min-height: 120px; border: 1px solid #c8cfda; border-radius: 6px; padding: 12px; }
+      main { max-width: 1040px; margin: 0 auto; padding: 34px 20px 72px; }
+      header { margin-bottom: 24px; }
+      h1 { font-size: 34px; line-height: 1.1; margin: 0 0 10px; }
+      h2 { margin: 0 0 14px; font-size: 20px; }
+      h3 { margin: 18px 0 8px; font-size: 16px; }
+      p, li, textarea, input, select { font-size: 16px; line-height: 1.65; }
+      .layout { display: grid; grid-template-columns: 360px minmax(0, 1fr); gap: 18px; align-items: start; }
+      section, aside { background: #fff; border: 1px solid #d9dee8; border-radius: 8px; padding: 22px; }
+      aside { position: sticky; top: 18px; }
+      label { display: grid; gap: 6px; margin: 12px 0; color: #334155; font-weight: 700; font-size: 13px; }
+      input, select, textarea { box-sizing: border-box; width: 100%; border: 1px solid #c8cfda; border-radius: 6px; padding: 10px; font: inherit; }
+      input[type="password"] { letter-spacing: 2px; }
+      textarea { min-height: 120px; }
+      .actions { display: grid; gap: 8px; margin-top: 14px; }
+      button { border: 0; border-radius: 6px; background: #2563eb; color: #fff; cursor: pointer; font: inherit; font-weight: 700; padding: 10px 12px; text-align: left; }
+      button.secondary { background: #475569; }
+      .note { color: #5f6f85; font-size: 14px; }
+      .flow { display: grid; gap: 12px; padding-left: 18px; }
+      .sample { margin-top: 18px; }
+      .pill { display: inline-flex; border-radius: 999px; background: #e8f1ff; color: #16428f; padding: 4px 10px; font-size: 13px; font-weight: 700; }
+      @media (max-width: 880px) { .layout { grid-template-columns: 1fr; } aside { position: static; } }
     </style>
   </head>
   <body>
     <main>
       <header>
-        <h1>Amazing Translate Demo Page</h1>
-        <p>Use this page to test page translation, selected text translation, and editable text translation after loading the unpacked extension.</p>
+        <span class="pill">Amazing Translate MVP</span>
+        <h1>Configuration and Translation Demo</h1>
+        <p>This page shows the exact workflow after loading <code>dist/</code> as an unpacked Chrome extension.</p>
       </header>
-      <section>
-        <h2>Reading Sample</h2>
-        <p>Modern browser extensions can improve reading workflows without sending every page to a remote service automatically. A manual translation flow gives the reader control over cost, privacy, and timing.</p>
-        <p>The extension scans visible article-like blocks, sends compact batches to the configured model, and inserts bilingual translations under the original text.</p>
-      </section>
-      <section>
-        <h2>Selection Sample</h2>
-        <p>Select this sentence, open the context menu, and choose Amazing Translate to see a floating translation result.</p>
-      </section>
-      <section>
-        <h2>Editable Sample</h2>
-        <textarea>This text area is useful for checking the input translation workflow. The extension should show a preview before replacing anything the user has typed.</textarea>
-      </section>
+      <div class="layout">
+        <aside>
+          <h2>API Key setup</h2>
+          <label>Provider<select><option>DeepSeek</option><option>智谱 GLM Coding</option></select></label>
+          <label>API Key<input type="password" value="sk-••••••••••••••••" /></label>
+          <label>Source language<select><option>Auto detect</option><option>English</option><option>简体中文</option></select></label>
+          <label>Target language<select><option>简体中文</option><option>English</option><option>日本語</option></select></label>
+          <div class="actions">
+            <button type="button">1. Save settings</button>
+            <button type="button">2. Test current provider</button>
+            <button type="button" class="secondary">3. Translate current page</button>
+          </div>
+          <p class="note">The real extension stores the key in Chrome extension local storage. It is not committed to Git and is never injected into webpages.</p>
+        </aside>
+        <section>
+          <h2>How to call the features</h2>
+          <ol class="flow">
+            <li>Open the extension popup and click <strong>设置</strong>.</li>
+            <li>Choose DeepSeek or 智谱 GLM Coding, paste the API Key, set languages, and click <strong>保存设置</strong>.</li>
+            <li>Click <strong>测试当前服务商</strong> to verify the configured endpoint.</li>
+            <li>Open any readable page and click <strong>翻译当前页</strong> from the popup or the floating page button.</li>
+            <li>Select text and use the context menu item <strong>Amazing Translate：翻译选中文本</strong>.</li>
+            <li>Focus a text box and use <strong>Amazing Translate：翻译输入内容</strong>; replacement only happens after clicking <strong>替换为译文</strong>.</li>
+          </ol>
+          <div class="sample">
+            <h2>Reading Sample</h2>
+            <p>Modern browser extensions can improve reading workflows without sending every page to a remote service automatically. A manual translation flow gives the reader control over cost, privacy, and timing.</p>
+            <p>The extension scans visible article-like blocks, sends compact batches to the configured model, and inserts bilingual translations under the original text.</p>
+          </div>
+          <div class="sample">
+            <h2>Selection Sample</h2>
+            <p>Select this sentence, open the context menu, and choose Amazing Translate to see a floating translation result.</p>
+          </div>
+          <div class="sample">
+            <h2>Editable Sample</h2>
+            <textarea>This text area is useful for checking the input translation workflow. The extension should show a preview before replacing anything the user has typed.</textarea>
+          </div>
+        </section>
+      </div>
     </main>
   </body>
 </html>
