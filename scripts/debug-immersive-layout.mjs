@@ -1,16 +1,25 @@
 import { readFileSync } from 'node:fs';
 import { JSDOM } from 'jsdom';
 
-const html = `<!doctype html><html><body>
-<main>
-  <article>
-    <h1>A concise heading for immersive translation testing</h1>
-    <p>Modern browser extensions can improve reading workflows without sending every page to a remote service automatically.</p>
-    <p>A manual translation flow gives the reader control over cost, privacy, and timing.</p>
-    <blockquote>Selected text should stay close to its original paragraph when translated inline.</blockquote>
-  </article>
-</main>
-</body></html>`;
+const html = [
+  '<!doctype html><html><body>',
+  '<header>',
+  '  <nav style="display:flex;gap:24px"><a href="/news">News</a><a href="/video">Video</a><a href="/prices">Prices</a></nav>',
+  '</header>',
+  '<main>',
+  '  <section style="display:flex;justify-content:space-between;align-items:center">',
+  '    <h2>Featured Stories</h2>',
+  '    <a href="/stories">View all stories</a>',
+  '  </section>',
+  '  <article>',
+  '    <h1>A concise heading for immersive translation testing</h1>',
+  '    <p>Modern browser extensions can improve reading workflows without sending every page to a remote service automatically.</p>',
+  '    <p>A manual translation flow gives the reader control over cost, privacy, and timing.</p>',
+  '    <blockquote>Selected text should stay close to its original paragraph when translated inline.</blockquote>',
+  '  </article>',
+  '</main>',
+  '</body></html>'
+].join('\n');
 
 const dom = new JSDOM(html, {
   url: 'https://example.test/article',
@@ -45,7 +54,7 @@ window.chrome = {
             cached: 0,
             translations: request.blocks.map((block, index) => ({
               id: block.id,
-              text: `译文 ${index + 1}: ${block.text.slice(0, 42)}`
+              text: '译文 ' + (index + 1) + ': ' + block.text.slice(0, 42)
             }))
           }
         };
@@ -64,19 +73,33 @@ const translations = [...window.document.querySelectorAll('.amazing-translate-re
 const sources = [...window.document.querySelectorAll('[data-amazing-translate-id]')];
 const failures = [];
 
-if (capturedBlocks.length !== 4) failures.push(`expected 4 captured blocks, got ${capturedBlocks.length}`);
-if (translations.length !== capturedBlocks.length) failures.push(`expected ${capturedBlocks.length} translation nodes, got ${translations.length}`);
+const translationFor = (source) => {
+  const id = source.getAttribute('data-amazing-translate-id');
+  return [...source.children].find((child) => child.classList?.contains('amazing-translate-result') && child.getAttribute('data-amazing-translate-for') === id)
+    || (source.nextElementSibling?.classList.contains('amazing-translate-result') && source.nextElementSibling.getAttribute('data-amazing-translate-for') === id ? source.nextElementSibling : null);
+};
+
+const capturedText = capturedBlocks.map((block) => block.text);
+for (const expected of ['News', 'Video', 'Prices', 'Featured Stories', 'View all stories']) {
+  if (!capturedText.includes(expected)) failures.push('expected to capture compact/navigation label: ' + expected);
+}
+if (!capturedText.some((text) => /Modern browser extensions/.test(text))) failures.push('expected article paragraph text to be captured');
+if (translations.length !== capturedBlocks.length) failures.push('expected ' + capturedBlocks.length + ' translation nodes, got ' + translations.length);
 
 for (const source of sources) {
   const id = source.getAttribute('data-amazing-translate-id');
-  const next = source.nextElementSibling;
-  if (!next?.classList.contains('amazing-translate-result')) failures.push(`${id} is not followed by a translation node`);
-  if (next?.getAttribute('data-amazing-translate-for') !== id) failures.push(`${id} translation node does not point back to source`);
+  const node = translationFor(source);
+  if (!node) failures.push(id + ' does not have an adjacent or compact child translation node');
 }
+
+const featured = [...sources].find((source) => source.textContent?.includes('Featured Stories'));
+const viewAll = [...sources].find((source) => source.textContent?.includes('View all stories'));
+if (featured && translationFor(featured)?.getAttribute('data-placement') !== 'compact-block') failures.push('Featured Stories should use compact block placement inside the heading');
+if (viewAll && translationFor(viewAll)?.getAttribute('data-placement') !== 'compact-inline') failures.push('View all stories should use compact inline placement inside the link');
 
 if (failures.length) {
   console.error(failures.join('\n'));
   process.exit(1);
 }
 
-console.log(JSON.stringify({ capturedBlocks: capturedBlocks.length, translationNodes: translations.length }, null, 2));
+console.log(JSON.stringify({ capturedBlocks: capturedBlocks.length, translationNodes: translations.length, compactNodes: translations.filter((node) => node.getAttribute('data-placement') !== 'after').length }, null, 2));
