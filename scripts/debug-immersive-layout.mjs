@@ -42,6 +42,15 @@ window.HTMLElement.prototype.getBoundingClientRect = function () {
 };
 
 const capturedBlocks = [];
+const selectionRange = {
+  getBoundingClientRect: () => ({ x: 0, y: 0, top: 96, left: 80, right: 300, bottom: 118, width: 220, height: 22, toJSON: () => ({}) })
+};
+let selectedText = 'Selected text should close automatically after translation';
+window.getSelection = () => ({
+  toString: () => selectedText,
+  rangeCount: selectedText ? 1 : 0,
+  getRangeAt: () => selectionRange
+});
 window.chrome = {
   runtime: {
     sendMessage: async (request) => {
@@ -61,13 +70,23 @@ window.chrome = {
       }
       return { ok: true, data: { sent: true } };
     },
-    onMessage: { addListener: () => undefined }
+    onMessage: { addListener: (listener) => { window.chrome.runtime.onMessage._listener = listener; } }
   }
 };
 
 window.eval(readFileSync('dist/content-script.js', 'utf8'));
 await window.__AMAZING_TRANSLATE_DEBUG__.translatePage();
 await new Promise((resolve) => window.setTimeout(resolve, 0));
+
+window.chrome.runtime.onMessage._listener({ type: 'TRANSLATE_SELECTION' });
+await new Promise((resolve) => window.setTimeout(resolve, 0));
+const selectionPopover = window.document.querySelector('.amazing-translate-popover');
+window.__AMAZING_TRANSLATE_DEBUG__.closePopover();
+const popoverAfterDebugClose = window.document.querySelector('.amazing-translate-popover');
+window.chrome.runtime.onMessage._listener({ type: 'TRANSLATE_SELECTION' });
+await new Promise((resolve) => window.setTimeout(resolve, 0));
+window.document.body.dispatchEvent(new window.Event('pointerdown', { bubbles: true }));
+const popoverAfterOutsideClick = window.document.querySelector('.amazing-translate-popover');
 
 const translations = [...window.document.querySelectorAll('.amazing-translate-result')];
 const sources = [...window.document.querySelectorAll('[data-amazing-translate-id]')];
@@ -84,7 +103,10 @@ for (const expected of ['News', 'Video', 'Prices', 'Featured Stories', 'View all
   if (!capturedText.includes(expected)) failures.push('expected to capture compact/navigation label: ' + expected);
 }
 if (!capturedText.some((text) => /Modern browser extensions/.test(text))) failures.push('expected article paragraph text to be captured');
-if (translations.length !== capturedBlocks.length) failures.push('expected ' + capturedBlocks.length + ' translation nodes, got ' + translations.length);
+if (!selectionPopover) failures.push('selection translation popover was not shown');
+if (popoverAfterDebugClose) failures.push('popover did not close through debug close helper');
+if (popoverAfterOutsideClick) failures.push('popover did not close when clicking outside');
+if (translations.length !== capturedBlocks.length - 2) failures.push('expected ' + (capturedBlocks.length - 2) + ' page translation nodes, got ' + translations.length);
 
 for (const source of sources) {
   const id = source.getAttribute('data-amazing-translate-id');
@@ -102,4 +124,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log(JSON.stringify({ capturedBlocks: capturedBlocks.length, translationNodes: translations.length, compactNodes: translations.filter((node) => node.getAttribute('data-placement') !== 'after').length }, null, 2));
+console.log(JSON.stringify({ capturedBlocks: capturedBlocks.length, translationNodes: translations.length, compactNodes: translations.filter((node) => node.getAttribute('data-placement') !== 'after').length, selectionPopoverClosed: !popoverAfterDebugClose && !popoverAfterOutsideClick }, null, 2));
