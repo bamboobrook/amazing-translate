@@ -1,4 +1,5 @@
 import { LANGUAGE_OPTIONS } from "../shared/defaults";
+import { applyI18n, languageLabel, providerLabel, t } from "../shared/i18n";
 import { sendMessage } from "../shared/runtime";
 import type { ExtensionSettings, ProviderId } from "../shared/types";
 import "./options.css";
@@ -23,15 +24,17 @@ const fields = {
 
 let currentSettings: ExtensionSettings;
 
-const fillLanguageOptions = () => {
+const fillLanguageOptions = (targetLanguage = currentSettings?.targetLanguage || "zh-Hans") => {
   for (const select of [fields.sourceLanguage, fields.targetLanguage]) {
+    const selectedValue = select.value;
     select.innerHTML = "";
-    for (const [value, label] of LANGUAGE_OPTIONS) {
+    for (const [value] of LANGUAGE_OPTIONS) {
       const option = document.createElement("option");
       option.value = value;
-      option.textContent = label;
+      option.textContent = languageLabel(value, targetLanguage);
       select.append(option);
     }
+    if (selectedValue) select.value = selectedValue;
   }
 };
 
@@ -40,8 +43,16 @@ const setStatus = (message: string, tone: "ok" | "error" | "info" = "info") => {
   fields.status.dataset.tone = tone;
 };
 
+const applyTargetLanguageUi = (targetLanguage: string) => {
+  fillLanguageOptions(targetLanguage);
+  applyI18n(document, targetLanguage);
+  document.title = t(targetLanguage, "optionsPageTitle");
+  fields.provider.querySelector<HTMLOptionElement>("option[value=glm]")!.textContent = providerLabel("glm", targetLanguage);
+};
+
 const render = (settings: ExtensionSettings) => {
   currentSettings = settings;
+  applyTargetLanguageUi(settings.targetLanguage);
   fields.provider.value = settings.provider;
   fields.maxBatchChars.value = String(settings.maxBatchChars);
   fields.deepseekApiKey.value = settings.providers.deepseek.apiKey;
@@ -79,14 +90,13 @@ const readSettings = (): ExtensionSettings => ({
 });
 
 const load = async () => {
-  fillLanguageOptions();
   render(await sendMessage<ExtensionSettings>({ type: "GET_SETTINGS" }));
 };
 
 $("save").addEventListener("click", async () => {
   try {
     render(await sendMessage<ExtensionSettings>({ type: "SAVE_SETTINGS", settings: readSettings() }));
-    setStatus("设置已保存", "ok");
+    setStatus(t(currentSettings.targetLanguage, "settingsSaved"), "ok");
   } catch (error) {
     setStatus(error instanceof Error ? error.message : String(error), "error");
   }
@@ -94,18 +104,23 @@ $("save").addEventListener("click", async () => {
 
 $("test").addEventListener("click", async () => {
   try {
-    await sendMessage<ExtensionSettings>({ type: "SAVE_SETTINGS", settings: readSettings() });
+    render(await sendMessage<ExtensionSettings>({ type: "SAVE_SETTINGS", settings: readSettings() }));
     const result = await sendMessage<{ sample: string }>({ type: "TEST_PROVIDER" });
-    setStatus(`连接成功：${result.sample}`, "ok");
+    setStatus(`${t(currentSettings.targetLanguage, "connectionSuccess")}: ${result.sample}`, "ok");
   } catch (error) {
     setStatus(error instanceof Error ? error.message : String(error), "error");
   }
 });
 
+fields.targetLanguage.addEventListener("change", () => {
+  currentSettings = { ...currentSettings, targetLanguage: fields.targetLanguage.value };
+  applyTargetLanguageUi(fields.targetLanguage.value);
+});
+
 $("clearCache").addEventListener("click", async () => {
   try {
     const result = await sendMessage<{ cleared: number }>({ type: "CLEAR_CACHE" });
-    setStatus(`已清空 ${result.cleared} 条缓存`, "ok");
+    setStatus(t(currentSettings.targetLanguage, "cacheCleared", { count: result.cleared }), "ok");
   } catch (error) {
     setStatus(error instanceof Error ? error.message : String(error), "error");
   }

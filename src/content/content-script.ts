@@ -74,13 +74,235 @@ if (amazingWindow.__AMAZING_TRANSLATE_LOADED__) {
   amazingWindow.__AMAZING_TRANSLATE_LOADED__ = true;
 
 const CONTENT_CSS = `
-.amazing-translate-result{display:block;margin:.08em 0 .34em;padding:0;border:0;background:transparent;color:inherit;font-size:.96em;line-height:1.48;font-weight:400;white-space:pre-wrap}.amazing-translate-result:before{content:"";display:none}.amazing-translate-result[data-display-mode=replace]{margin:.08em 0 .34em}.amazing-translate-result[data-placement=compact-block]{display:block;margin:.04em 0 0;font-size:.92em;line-height:1.28;white-space:normal}.amazing-translate-result[data-placement=compact-inline]{display:inline;margin:0 0 0 .28em;font-size:.9em;line-height:inherit;white-space:normal}.amazing-translate-pending{display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;margin:.05em 0 .2em;padding:0;border:0;background:transparent;color:inherit;line-height:1}.amazing-translate-pending[data-placement=after]{display:flex;width:1.1em;height:1.1em;margin:.1em 0 .28em}.amazing-translate-pending[data-placement=compact-block]{display:flex;width:1em;height:1em;margin:.05em 0 0}.amazing-translate-pending[data-placement=compact-inline]{width:1em;height:1em;margin:0 0 0 .32em}.amazing-translate-spinner{box-sizing:border-box;width:.82em;height:.82em;border:2px solid currentColor;border-right-color:transparent;border-radius:999px;opacity:.62;animation:amazing-translate-spin .72s linear infinite}@keyframes amazing-translate-spin{to{transform:rotate(360deg)}}.amazing-translate-page-panel{position:fixed;right:16px;top:64vh;z-index:2147483647;box-sizing:border-box;transform:translateY(-50%);font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;touch-action:none}.amazing-translate-page-panel[data-dragging=true]{cursor:grabbing}.amazing-translate-page-toggle{display:flex;align-items:center;gap:8px;min-height:42px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;color:#172033;box-shadow:0 16px 38px rgba(20,31,48,.22);cursor:grab;font:inherit;font-size:13px;font-weight:800;padding:7px 12px 7px 8px;user-select:none}.amazing-translate-page-toggle:active{cursor:grabbing}.amazing-translate-page-toggle[data-state=translated]{background:#475569;border-color:#475569;color:#fff}.amazing-translate-page-toggle-mark,.amazing-translate-selection-button-mark{display:grid;place-items:center;width:26px;height:26px;border-radius:7px;background:#0f766e;color:#fff;font-size:11px;font-weight:900;line-height:1}.amazing-translate-page-toggle[data-state=translated] .amazing-translate-page-toggle-mark{background:#fff;color:#475569}.amazing-translate-page-toggle-label{white-space:nowrap}.amazing-translate-selection-button{position:absolute;z-index:2147483646;display:grid;place-items:center;width:30px;height:30px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;color:#172033;box-shadow:0 10px 26px rgba(20,31,48,.24);cursor:pointer;padding:0}.amazing-translate-selection-button-mark{width:22px;height:22px;border-radius:6px;font-size:10px}.amazing-translate-popover{position:absolute;z-index:2147483647;box-sizing:border-box;max-width:360px;padding:12px;border:1px solid #c8d2e4;border-radius:8px;background:#fff;color:#1f2937;box-shadow:0 14px 40px rgba(25,35,55,.22);font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:14px;line-height:1.6}.amazing-translate-popover button{border:0;border-radius:6px;background:#2563eb;color:#fff;cursor:pointer;font:inherit;padding:7px 10px}.amazing-translate-popover-close{position:absolute;top:6px;right:6px;display:grid;place-items:center;width:24px;height:24px;border:0!important;border-radius:6px!important;background:transparent!important;color:#64748b!important;font-size:18px!important;line-height:1!important;padding:0!important}.amazing-translate-popover-text{margin:0 18px 10px 0;white-space:pre-wrap}.amazing-translate-toast{position:fixed;left:50%;top:18px;z-index:2147483647;transform:translateX(-50%);max-width:min(520px,calc(100vw - 32px));padding:10px 14px;border-radius:8px;background:#1f2937;color:#fff;box-shadow:0 10px 30px rgba(25,35,55,.2);font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:14px}.amazing-translate-toast.error{background:#b42318}
+.amazing-translate-result{display:block;margin:.08em 0 .34em;padding:0;border:0;background:transparent;color:inherit;font-size:.96em;line-height:1.48;font-weight:400;white-space:pre-wrap}.amazing-translate-result:before{content:"";display:none}.amazing-translate-result[data-display-mode=replace]{margin:.08em 0 .34em}.amazing-translate-result[data-placement=compact-block]{display:block;margin:.04em 0 0;font-size:.92em;line-height:1.28;white-space:normal}.amazing-translate-result[data-placement=compact-inline]{display:inline;margin:0 0 0 .28em;font-size:.9em;line-height:inherit;white-space:normal}.amazing-translate-pending{display:inline-flex;align-items:center;justify-content:center;vertical-align:middle;margin:.05em 0 .2em;padding:0;border:0;background:transparent;color:inherit;line-height:1}.amazing-translate-pending[data-placement=after]{display:flex;width:1.1em;height:1.1em;margin:.1em 0 .28em}.amazing-translate-pending[data-placement=compact-block]{display:flex;width:1em;height:1em;margin:.05em 0 0}.amazing-translate-pending[data-placement=compact-inline]{width:1em;height:1em;margin:0 0 0 .32em}.amazing-translate-spinner{box-sizing:border-box;width:.82em;height:.82em;border:2px solid currentColor;border-right-color:transparent;border-radius:999px;opacity:.62;animation:amazing-translate-spin .72s linear infinite}@keyframes amazing-translate-spin{to{transform:rotate(360deg)}}.amazing-translate-page-panel{position:fixed;right:12px;top:64vh;z-index:2147483647;box-sizing:border-box;transform:translateY(-50%);font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;touch-action:none}.amazing-translate-page-panel[data-dragging=true]{cursor:grabbing}.amazing-translate-page-toggle{position:relative;display:grid;place-items:center;width:38px;height:38px;min-width:38px;min-height:38px;border:1px solid #cbd5e1;border-radius:9px;background:#fff;color:#172033;box-shadow:0 12px 30px rgba(20,31,48,.2);cursor:grab;font:inherit;font-size:13px;font-weight:800;padding:0;user-select:none}.amazing-translate-page-toggle:active{cursor:grabbing}.amazing-translate-page-toggle:focus-visible{outline:2px solid #0ea5a0;outline-offset:2px}.amazing-translate-page-toggle[data-state=translated]{background:#475569;border-color:#475569;color:#fff}.amazing-translate-page-toggle-mark,.amazing-translate-selection-button-mark{display:grid;place-items:center;width:26px;height:26px;border-radius:7px;background:#0f766e;color:#fff;font-size:11px;font-weight:900;line-height:1}.amazing-translate-page-toggle[data-state=translated] .amazing-translate-page-toggle-mark{background:#fff;color:#475569}.amazing-translate-page-toggle-label{position:absolute;right:46px;top:50%;box-sizing:border-box;max-width:min(240px,calc(100vw - 86px));transform:translate(6px,-50%);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:7px 10px;border-radius:7px;background:#172033;color:#fff;box-shadow:0 10px 24px rgba(20,31,48,.22);font-size:12px;font-weight:800;line-height:1.25;opacity:0;pointer-events:none;transition:opacity .14s ease,transform .14s ease}.amazing-translate-page-toggle-label:after{content:"";position:absolute;right:-5px;top:50%;width:10px;height:10px;background:#172033;transform:translateY(-50%) rotate(45deg)}.amazing-translate-page-panel:hover .amazing-translate-page-toggle-label,.amazing-translate-page-toggle:focus-visible .amazing-translate-page-toggle-label{opacity:1;transform:translate(0,-50%)}.amazing-translate-selection-button{position:absolute;z-index:2147483646;display:grid;place-items:center;width:30px;height:30px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;color:#172033;box-shadow:0 10px 26px rgba(20,31,48,.24);cursor:pointer;padding:0}.amazing-translate-selection-button-mark{width:22px;height:22px;border-radius:6px;font-size:10px}.amazing-translate-popover{position:absolute;z-index:2147483647;box-sizing:border-box;max-width:360px;padding:12px;border:1px solid #c8d2e4;border-radius:8px;background:#fff;color:#1f2937;box-shadow:0 14px 40px rgba(25,35,55,.22);font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:14px;line-height:1.6}.amazing-translate-popover button{border:0;border-radius:6px;background:#2563eb;color:#fff;cursor:pointer;font:inherit;padding:7px 10px}.amazing-translate-popover-close{position:absolute;top:6px;right:6px;display:grid;place-items:center;width:24px;height:24px;border:0!important;border-radius:6px!important;background:transparent!important;color:#64748b!important;font-size:18px!important;line-height:1!important;padding:0!important}.amazing-translate-popover-text{margin:0 18px 10px 0;white-space:pre-wrap}.amazing-translate-toast{position:fixed;left:50%;top:18px;z-index:2147483647;transform:translateX(-50%);max-width:min(520px,calc(100vw - 32px));padding:10px 14px;border-radius:8px;background:#1f2937;color:#fff;box-shadow:0 10px 30px rgba(25,35,55,.2);font-family:ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;font-size:14px}.amazing-translate-toast.error{background:#b42318}
 `;
 
 const MAX_PAGE_BLOCKS = 600;
 const GENERIC_TEXT_LIMIT = 360;
 const COMPACT_TEXT_LIMIT = 88;
 const DEFAULT_TARGET_LANGUAGE = "zh-Hans";
+
+type ContentUiKey =
+  | "translatePage"
+  | "restoreOriginal"
+  | "restoredOriginal"
+  | "alreadyTranslated"
+  | "noContent"
+  | "translatingBlocks"
+  | "done"
+  | "cached"
+  | "translating"
+  | "translateSelection"
+  | "closeResult"
+  | "replaceWithTranslation"
+  | "replacedEditable"
+  | "selectTextFirst"
+  | "noTranslation"
+  | "focusEditableFirst"
+  | "editableNoContent";
+
+type ContentUiLanguage = "zh-Hans" | "zh-Hant" | "en" | "ja" | "ko" | "fr" | "de" | "es" | "ru";
+
+const CONTENT_UI_TEXT: Record<ContentUiLanguage, Record<ContentUiKey, string>> = {
+  en: {
+    translatePage: "Translate page",
+    restoreOriginal: "Restore original",
+    restoredOriginal: "Original restored",
+    alreadyTranslated: "This page is already translated",
+    noContent: "No suitable text found for translation",
+    translatingBlocks: "Translating {count} text blocks...",
+    done: "Translation complete: {rendered}/{total} blocks",
+    cached: ", {count} from cache",
+    translating: "Translating",
+    translateSelection: "Translate selected text",
+    closeResult: "Close translation result",
+    replaceWithTranslation: "Replace with translation",
+    replacedEditable: "Input replaced with translation",
+    selectTextFirst: "Select text to translate first",
+    noTranslation: "No translation returned",
+    focusEditableFirst: "Focus an input box first",
+    editableNoContent: "The input box has no translatable content"
+  },
+  "zh-Hans": {
+    translatePage: "翻译网页",
+    restoreOriginal: "恢复原文",
+    restoredOriginal: "已恢复原文",
+    alreadyTranslated: "当前页面内容已翻译",
+    noContent: "没有找到适合翻译的正文内容",
+    translatingBlocks: "正在逐段翻译 {count} 段文本...",
+    done: "逐段翻译完成：{rendered}/{total} 段",
+    cached: "，{count} 段来自缓存",
+    translating: "正在翻译",
+    translateSelection: "翻译选中文本",
+    closeResult: "关闭翻译结果",
+    replaceWithTranslation: "替换为译文",
+    replacedEditable: "已替换输入内容",
+    selectTextFirst: "请先选择要翻译的文本",
+    noTranslation: "没有返回译文",
+    focusEditableFirst: "请先把光标放在输入框中",
+    editableNoContent: "输入框没有可翻译内容"
+  },
+  "zh-Hant": {
+    translatePage: "翻譯網頁",
+    restoreOriginal: "還原原文",
+    restoredOriginal: "已還原原文",
+    alreadyTranslated: "目前頁面內容已翻譯",
+    noContent: "沒有找到適合翻譯的正文內容",
+    translatingBlocks: "正在逐段翻譯 {count} 段文字...",
+    done: "逐段翻譯完成：{rendered}/{total} 段",
+    cached: "，{count} 段來自快取",
+    translating: "正在翻譯",
+    translateSelection: "翻譯選取文字",
+    closeResult: "關閉翻譯結果",
+    replaceWithTranslation: "替換為譯文",
+    replacedEditable: "已替換輸入內容",
+    selectTextFirst: "請先選取要翻譯的文字",
+    noTranslation: "沒有返回譯文",
+    focusEditableFirst: "請先把游標放在輸入框中",
+    editableNoContent: "輸入框沒有可翻譯內容"
+  },
+  ja: {
+    translatePage: "ページを翻訳",
+    restoreOriginal: "原文を復元",
+    restoredOriginal: "原文を復元しました",
+    alreadyTranslated: "このページは翻訳済みです",
+    noContent: "翻訳に適した本文が見つかりません",
+    translatingBlocks: "{count} 件のテキストを翻訳中...",
+    done: "翻訳完了: {rendered}/{total} 件",
+    cached: "、{count} 件はキャッシュから",
+    translating: "翻訳中",
+    translateSelection: "選択テキストを翻訳",
+    closeResult: "翻訳結果を閉じる",
+    replaceWithTranslation: "翻訳に置き換える",
+    replacedEditable: "入力内容を翻訳に置き換えました",
+    selectTextFirst: "翻訳するテキストを先に選択してください",
+    noTranslation: "翻訳が返されませんでした",
+    focusEditableFirst: "先に入力欄へカーソルを置いてください",
+    editableNoContent: "入力欄に翻訳できる内容がありません"
+  },
+  ko: {
+    translatePage: "페이지 번역",
+    restoreOriginal: "원문 복원",
+    restoredOriginal: "원문을 복원했습니다",
+    alreadyTranslated: "현재 페이지가 이미 번역되었습니다",
+    noContent: "번역할 본문을 찾지 못했습니다",
+    translatingBlocks: "텍스트 {count}개를 번역 중...",
+    done: "번역 완료: {rendered}/{total}개",
+    cached: ", {count}개는 캐시에서 사용",
+    translating: "번역 중",
+    translateSelection: "선택한 텍스트 번역",
+    closeResult: "번역 결과 닫기",
+    replaceWithTranslation: "번역으로 바꾸기",
+    replacedEditable: "입력 내용을 번역으로 바꿨습니다",
+    selectTextFirst: "먼저 번역할 텍스트를 선택하세요",
+    noTranslation: "번역 결과가 없습니다",
+    focusEditableFirst: "먼저 입력 상자에 커서를 놓으세요",
+    editableNoContent: "입력 상자에 번역할 내용이 없습니다"
+  },
+  fr: {
+    translatePage: "Traduire la page",
+    restoreOriginal: "Restaurer l'original",
+    restoredOriginal: "Original restauré",
+    alreadyTranslated: "Cette page est déjà traduite",
+    noContent: "Aucun texte approprié à traduire",
+    translatingBlocks: "Traduction de {count} blocs...",
+    done: "Traduction terminée : {rendered}/{total}",
+    cached: ", {count} depuis le cache",
+    translating: "Traduction",
+    translateSelection: "Traduire le texte sélectionné",
+    closeResult: "Fermer le résultat",
+    replaceWithTranslation: "Remplacer par la traduction",
+    replacedEditable: "Saisie remplacée par la traduction",
+    selectTextFirst: "Sélectionnez d'abord le texte à traduire",
+    noTranslation: "Aucune traduction renvoyée",
+    focusEditableFirst: "Placez d'abord le curseur dans un champ",
+    editableNoContent: "Le champ ne contient rien à traduire"
+  },
+  de: {
+    translatePage: "Seite übersetzen",
+    restoreOriginal: "Original wiederherstellen",
+    restoredOriginal: "Original wiederhergestellt",
+    alreadyTranslated: "Diese Seite ist bereits übersetzt",
+    noContent: "Kein geeigneter Text zum Übersetzen gefunden",
+    translatingBlocks: "Übersetze {count} Textblöcke...",
+    done: "Übersetzung fertig: {rendered}/{total}",
+    cached: ", {count} aus dem Cache",
+    translating: "Übersetzen",
+    translateSelection: "Ausgewählten Text übersetzen",
+    closeResult: "Übersetzung schließen",
+    replaceWithTranslation: "Durch Übersetzung ersetzen",
+    replacedEditable: "Eingabe durch Übersetzung ersetzt",
+    selectTextFirst: "Wählen Sie zuerst Text zum Übersetzen aus",
+    noTranslation: "Keine Übersetzung zurückgegeben",
+    focusEditableFirst: "Setzen Sie zuerst den Cursor in ein Eingabefeld",
+    editableNoContent: "Das Eingabefeld enthält keinen übersetzbaren Inhalt"
+  },
+  es: {
+    translatePage: "Traducir página",
+    restoreOriginal: "Restaurar original",
+    restoredOriginal: "Original restaurado",
+    alreadyTranslated: "Esta página ya está traducida",
+    noContent: "No se encontró texto adecuado para traducir",
+    translatingBlocks: "Traduciendo {count} bloques...",
+    done: "Traducción completa: {rendered}/{total}",
+    cached: ", {count} desde caché",
+    translating: "Traduciendo",
+    translateSelection: "Traducir texto seleccionado",
+    closeResult: "Cerrar resultado",
+    replaceWithTranslation: "Reemplazar por traducción",
+    replacedEditable: "Entrada reemplazada por traducción",
+    selectTextFirst: "Primero selecciona texto para traducir",
+    noTranslation: "No se devolvió traducción",
+    focusEditableFirst: "Primero coloca el cursor en un campo",
+    editableNoContent: "El campo no tiene contenido traducible"
+  },
+  ru: {
+    translatePage: "Перевести страницу",
+    restoreOriginal: "Восстановить оригинал",
+    restoredOriginal: "Оригинал восстановлен",
+    alreadyTranslated: "Эта страница уже переведена",
+    noContent: "Подходящий текст для перевода не найден",
+    translatingBlocks: "Перевод блоков: {count}...",
+    done: "Перевод завершен: {rendered}/{total}",
+    cached: ", {count} из кэша",
+    translating: "Перевод",
+    translateSelection: "Перевести выделенный текст",
+    closeResult: "Закрыть результат перевода",
+    replaceWithTranslation: "Заменить переводом",
+    replacedEditable: "Ввод заменен переводом",
+    selectTextFirst: "Сначала выделите текст для перевода",
+    noTranslation: "Перевод не возвращен",
+    focusEditableFirst: "Сначала поместите курсор в поле ввода",
+    editableNoContent: "В поле нет содержимого для перевода"
+  }
+};
+
+const contentUiLanguage = (targetLanguage = DEFAULT_TARGET_LANGUAGE): ContentUiLanguage => {
+  const language = targetLanguage.toLowerCase();
+  if (language.startsWith("zh-hant") || language.startsWith("zh-tw") || language.startsWith("zh-hk")) return "zh-Hant";
+  if (language.startsWith("zh")) return "zh-Hans";
+  if (language.startsWith("ja")) return "ja";
+  if (language.startsWith("ko")) return "ko";
+  if (language.startsWith("fr")) return "fr";
+  if (language.startsWith("de")) return "de";
+  if (language.startsWith("es")) return "es";
+  if (language.startsWith("ru")) return "ru";
+  return "en";
+};
+
+let currentTargetLanguage = DEFAULT_TARGET_LANGUAGE;
+
+const contentText = (key: ContentUiKey, values: Record<string, string | number> = {}): string => {
+  let text = CONTENT_UI_TEXT[contentUiLanguage(currentTargetLanguage)][key] || CONTENT_UI_TEXT.en[key];
+  for (const [name, value] of Object.entries(values)) text = text.replaceAll(`{${name}}`, String(value));
+  return text;
+};
+
+const setCurrentTargetLanguage = (targetLanguage = DEFAULT_TARGET_LANGUAGE): void => {
+  currentTargetLanguage = targetLanguage;
+  setToolbarMode(inserted.size > 0 || pageTranslationActive);
+};
+
 const COMPACT_PARENT_DISPLAYS = new Set(["flex", "inline-flex", "grid", "inline-grid"]);
 
 const SEMANTIC_TEXT_SELECTOR = [
@@ -540,9 +762,11 @@ const setToolbarMode = (translated: boolean) => {
   if (!button) return;
   button.dataset.state = translated ? "translated" : "ready";
   button.dataset.action = translated ? "restore" : "translate";
-  button.setAttribute("aria-label", translated ? "恢复原文" : "翻译网页");
+  const labelText = translated ? contentText("restoreOriginal") : contentText("translatePage");
+  button.setAttribute("aria-label", labelText);
+  button.setAttribute("title", labelText);
   const label = button.querySelector<HTMLElement>(".amazing-translate-page-toggle-label");
-  if (label) label.textContent = translated ? "恢复原文" : "翻译网页";
+  if (label) label.textContent = labelText;
 };
 
 const clampToolbarTop = (top: number): number => {
@@ -601,7 +825,7 @@ const ensureToolbar = () => {
   toolbar.className = "amazing-translate-page-panel";
   toolbar.dataset.amazingTranslate = "true";
   toolbar.dataset.dragging = "false";
-  toolbar.innerHTML = `<button type="button" class="amazing-translate-page-toggle" data-action="translate" data-state="ready" aria-label="翻译网页"><span class="amazing-translate-page-toggle-mark">AT</span><span class="amazing-translate-page-toggle-label">翻译网页</span></button>`;
+  toolbar.innerHTML = `<button type="button" class="amazing-translate-page-toggle" data-action="translate" data-state="ready" aria-label="${contentText("translatePage")}" title="${contentText("translatePage")}"><span class="amazing-translate-page-toggle-mark">AT</span><span class="amazing-translate-page-toggle-label">${contentText("translatePage")}</span></button>`;
   toolbar.addEventListener("pointerdown", handleToolbarPointerDown);
   toolbar.addEventListener("pointermove", handleToolbarPointerMove);
   toolbar.addEventListener("pointerup", handleToolbarPointerUp);
@@ -667,7 +891,7 @@ const restorePage = () => {
   for (const id of Array.from(inserted.keys())) removeInsertedTranslation(id);
   inserted.clear();
   setToolbarMode(false);
-  showToast("已恢复原文");
+  showToast(contentText("restoredOriginal"));
 };
 
 const chooseTranslationPlacement = (source: HTMLElement, sourceText: string, settings: ExtensionSettings): TranslationPlacement => {
@@ -714,7 +938,7 @@ const createPendingIndicator = (source: HTMLElement, id: string, placement: Tran
   node.dataset.amazingTranslateFor = id;
   node.dataset.placement = placement;
   node.style.color = getSourceTextColor(source);
-  node.setAttribute("aria-label", "正在翻译");
+  node.setAttribute("aria-label", contentText("translating"));
   node.innerHTML = `<span class="amazing-translate-spinner" aria-hidden="true"></span>`;
   return node;
 };
@@ -771,14 +995,15 @@ const translatePage = async (options: { incremental?: boolean } = {}) => {
 
   try {
     const settings = await sendMessage<ExtensionSettings>({ type: "GET_SETTINGS" });
+    setCurrentTargetLanguage(settings.targetLanguage);
     const blocks = collectPageBlocks(document, { onlyUntranslated: true, targetLanguage: settings.targetLanguage });
     if (blocks.length === 0) {
-      if (!incremental) showToast(inserted.size > 0 ? "当前页面内容已翻译" : "没有找到适合翻译的正文内容", inserted.size > 0 ? "info" : "error");
+      if (!incremental) showToast(inserted.size > 0 ? contentText("alreadyTranslated") : contentText("noContent"), inserted.size > 0 ? "info" : "error");
       return;
     }
 
     showPendingIndicators(blocks, settings);
-    if (!incremental) showToast(`正在逐段翻译 ${blocks.length} 段文本...`);
+    if (!incremental) showToast(contentText("translatingBlocks", { count: blocks.length }));
     const response = await sendMessage<TranslateResponse>({
       type: "TRANSLATE_BATCH",
       blocks: blocks.map(({ id, text }) => ({ id, text }))
@@ -787,8 +1012,8 @@ const translatePage = async (options: { incremental?: boolean } = {}) => {
     for (const block of blocks) removePendingIndicator(block.id);
 
     if (!incremental) {
-      const cacheText = response.cached > 0 ? `，${response.cached} 段来自缓存` : "";
-      showToast(`逐段翻译完成：${rendered}/${blocks.length} 段${cacheText}`);
+      const cacheText = response.cached > 0 ? contentText("cached", { count: response.cached }) : "";
+      showToast(`${contentText("done", { rendered, total: blocks.length })}${cacheText}`);
     }
   } catch (error) {
     pageTranslationActive = false;
@@ -853,7 +1078,7 @@ const showSelectionButton = () => {
     selectionButton.type = "button";
     selectionButton.className = "amazing-translate-selection-button";
     selectionButton.dataset.amazingTranslate = "true";
-    selectionButton.setAttribute("aria-label", "翻译选中文本");
+    selectionButton.setAttribute("aria-label", contentText("translateSelection"));
     selectionButton.innerHTML = `<span class="amazing-translate-selection-button-mark">AT</span>`;
     selectionButton.addEventListener("pointerdown", (event) => event.stopPropagation());
     selectionButton.addEventListener("click", (event) => {
@@ -892,7 +1117,7 @@ const showPopover = (content: string, options?: { replacement?: () => void; auto
   const closeButton = document.createElement("button");
   closeButton.type = "button";
   closeButton.className = "amazing-translate-popover-close";
-  closeButton.setAttribute("aria-label", "关闭翻译结果");
+  closeButton.setAttribute("aria-label", contentText("closeResult"));
   closeButton.textContent = "×";
   closeButton.addEventListener("click", closePopover);
   popover.append(closeButton);
@@ -904,11 +1129,11 @@ const showPopover = (content: string, options?: { replacement?: () => void; auto
   if (options?.replacement) {
     const button = document.createElement("button");
     button.type = "button";
-    button.textContent = "替换为译文";
+    button.textContent = contentText("replaceWithTranslation");
     button.addEventListener("click", () => {
       options.replacement?.();
       closePopover();
-      showToast("已替换输入内容");
+      showToast(contentText("replacedEditable"));
     });
     popover.append(button);
   }
@@ -923,12 +1148,12 @@ const showPopover = (content: string, options?: { replacement?: () => void; auto
 const translateSelection = async () => {
   const text = window.getSelection()?.toString().trim();
   if (!text) {
-    showToast("请先选择要翻译的文本", "error");
+    showToast(contentText("selectTextFirst"), "error");
     return;
   }
   try {
     const response = await sendMessage<TranslateResponse>({ type: "TRANSLATE_BATCH", blocks: [{ id: "selection", text }] });
-    showPopover(response.translations[0]?.text || "没有返回译文", { autoCloseMs: 10000 });
+    showPopover(response.translations[0]?.text || contentText("noTranslation"), { autoCloseMs: 10000 });
   } catch (error) {
     showToast(error instanceof Error ? error.message : String(error), "error");
   }
@@ -937,25 +1162,35 @@ const translateSelection = async () => {
 const translateEditable = async () => {
   const target = findEditableTarget();
   if (!target) {
-    showToast("请先把光标放在输入框中", "error");
+    showToast(contentText("focusEditableFirst"), "error");
     return;
   }
   const text = readEditableText(target);
   if (!text) {
-    showToast("输入框没有可翻译内容", "error");
+    showToast(contentText("editableNoContent"), "error");
     return;
   }
   try {
     const response = await sendMessage<TranslateResponse>({ type: "TRANSLATE_BATCH", blocks: [{ id: "editable", text }] });
     const translated = response.translations[0]?.text || "";
-    showPopover(translated || "没有返回译文", { replacement: () => replaceEditableText(target, translated) });
+    showPopover(translated || contentText("noTranslation"), { replacement: () => replaceEditableText(target, translated) });
   } catch (error) {
     showToast(error instanceof Error ? error.message : String(error), "error");
   }
 };
 
+const refreshContentLanguage = async (): Promise<void> => {
+  try {
+    const settings = await sendMessage<ExtensionSettings>({ type: "GET_SETTINGS" });
+    setCurrentTargetLanguage(settings.targetLanguage);
+  } catch {
+    setToolbarMode(inserted.size > 0 || pageTranslationActive);
+  }
+};
+
 injectStyles();
 ensureToolbar();
+void refreshContentLanguage();
 
 document.addEventListener("selectionchange", () => {
   window.setTimeout(showSelectionButton, 80);

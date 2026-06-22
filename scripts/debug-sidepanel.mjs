@@ -83,7 +83,7 @@ if (!document.querySelector('#providerSummary')?.textContent?.includes('GLM')) f
 
 document.querySelector('#testProvider').click();
 await new Promise((resolve) => window.setTimeout(resolve, 10));
-if (!document.querySelector('#status')?.textContent?.includes('连接成功')) failures.push('test provider status was not shown');
+if (!/连接成功|接続|Connection/.test(document.querySelector('#status')?.textContent || '')) failures.push('test provider status was not shown');
 
 if (failures.length) {
   console.error(JSON.stringify({ failures, provider, languages, messages }, null, 2));

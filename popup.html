@@ -8,12 +8,12 @@
   </head>
   <body>
     <main class="popup-shell">
-      <header><p class="eyebrow">Amazing Translate</p><h1>网页翻译</h1></header>
-      <dl class="meta"><div><dt>服务商</dt><dd id="provider">-</dd></div><div><dt>语言</dt><dd id="languages">-</dd></div></dl>
+      <header><p class="eyebrow">Amazing Translate</p><h1 data-i18n="webTranslate">网页翻译</h1></header>
+      <dl class="meta"><div><dt data-i18n="provider">服务商</dt><dd id="provider">-</dd></div><div><dt data-i18n="language">语言</dt><dd id="languages">-</dd></div></dl>
       <section class="actions">
-        <button id="translatePage" type="button">翻译当前页</button>
-        <button id="restorePage" type="button" class="secondary">恢复原文</button>
-        <button id="openOptions" type="button" class="ghost">设置</button>
+        <button id="translatePage" type="button" data-i18n="translateCurrentPage">翻译当前页</button>
+        <button id="restorePage" type="button" class="secondary" data-i18n="restoreOriginal">恢复原文</button>
+        <button id="openOptions" type="button" class="ghost" data-i18n="settings">设置</button>
       </section>
       <p id="status" role="status"></p>
     </main>

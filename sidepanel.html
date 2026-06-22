@@ -12,53 +12,53 @@
         <img src="/icons/icon-48.png" alt="" class="app-icon" />
         <div>
           <p class="eyebrow">Amazing Translate</p>
-          <h1>翻译控制台</h1>
+          <h1 data-i18n="translationConsole">翻译控制台</h1>
         </div>
       </header>
 
       <section class="status-card" aria-live="polite">
         <div>
-          <span class="label">服务商</span>
+          <span class="label" data-i18n="provider">服务商</span>
           <strong id="providerSummary">-</strong>
         </div>
         <div>
-          <span class="label">语言</span>
+          <span class="label" data-i18n="language">语言</span>
           <strong id="languageSummary">-</strong>
         </div>
       </section>
 
       <section class="panel-section">
         <div class="section-title">
-          <h2>网页操作</h2>
-          <button id="restorePage" type="button" class="icon-button" title="恢复原文" aria-label="恢复原文">↺</button>
+          <h2 data-i18n="webActions">网页操作</h2>
+          <button id="restorePage" type="button" class="icon-button" title="恢复原文" aria-label="恢复原文" data-i18n-title="restoreOriginal" data-i18n-aria-label="restoreOriginal">↺</button>
         </div>
-        <button id="translatePage" type="button" class="primary-action">翻译当前页</button>
+        <button id="translatePage" type="button" class="primary-action" data-i18n="translateCurrentPage">翻译当前页</button>
         <div class="quick-grid">
-          <button id="translateSelection" type="button">划词翻译</button>
-          <button id="translateEditable" type="button">输入框翻译</button>
+          <button id="translateSelection" type="button" data-i18n="selectionTranslate">划词翻译</button>
+          <button id="translateEditable" type="button" data-i18n="editableTranslate">输入框翻译</button>
         </div>
       </section>
 
       <section class="panel-section">
-        <h2>语言与显示</h2>
+        <h2 data-i18n="languageAndDisplay">语言与显示</h2>
         <label>
-          源语言
+          <span data-i18n="sourceLanguage">源语言</span>
           <select id="sourceLanguage"></select>
         </label>
         <label>
-          目标语言
+          <span data-i18n="targetLanguage">目标语言</span>
           <select id="targetLanguage"></select>
         </label>
-        <div class="segmented" role="group" aria-label="显示模式">
-          <button id="displayBelow" type="button" data-mode="below">原文下方</button>
-          <button id="displayReplace" type="button" data-mode="replace">替换原文</button>
+        <div class="segmented" role="group" aria-label="显示模式" data-i18n-aria-label="displayMode">
+          <button id="displayBelow" type="button" data-mode="below" data-i18n="belowOriginal">原文下方</button>
+          <button id="displayReplace" type="button" data-mode="replace" data-i18n="replaceOriginal">替换原文</button>
         </div>
       </section>
 
       <section class="panel-section">
-        <h2>模型配置</h2>
+        <h2 data-i18n="modelConfig">模型配置</h2>
         <label>
-          服务商
+          <span data-i18n="provider">服务商</span>
           <select id="provider">
             <option value="deepseek">DeepSeek</option>
             <option value="glm">智谱 GLM Coding</option>
@@ -68,37 +68,37 @@
           API Key
           <div class="input-row">
             <input id="apiKey" type="password" autocomplete="off" spellcheck="false" />
-            <button id="toggleKey" type="button" class="icon-button" title="显示或隐藏 API Key" aria-label="显示或隐藏 API Key">◐</button>
+            <button id="toggleKey" type="button" class="icon-button" title="显示或隐藏 API Key" aria-label="显示或隐藏 API Key" data-i18n-title="showHideApiKey" data-i18n-aria-label="showHideApiKey">◐</button>
           </div>
         </label>
         <label>
-          模型
+          <span data-i18n="model">模型</span>
           <input id="model" type="text" spellcheck="false" />
         </label>
         <details>
-          <summary>高级</summary>
+          <summary data-i18n="advanced">高级</summary>
           <label>
             Base URL
             <input id="baseUrl" type="url" spellcheck="false" />
           </label>
           <label class="check-row">
             <input id="cacheEnabled" type="checkbox" />
-            启用本地缓存
+            <span data-i18n="localCache">启用本地缓存</span>
           </label>
           <label>
-            批量字符上限
+            <span data-i18n="maxBatchChars">批量字符上限</span>
             <input id="maxBatchChars" type="number" min="500" max="12000" step="500" />
           </label>
         </details>
         <div class="quick-grid">
-          <button id="saveSettings" type="button">保存</button>
-          <button id="testProvider" type="button">测试连接</button>
+          <button id="saveSettings" type="button" data-i18n="save">保存</button>
+          <button id="testProvider" type="button" data-i18n="testConnection">测试连接</button>
         </div>
       </section>
 
       <footer class="footer-actions">
-        <button id="openOptions" type="button" class="ghost">完整设置</button>
-        <button id="clearCache" type="button" class="ghost">清空缓存</button>
+        <button id="openOptions" type="button" class="ghost" data-i18n="fullSettings">完整设置</button>
+        <button id="clearCache" type="button" class="ghost" data-i18n="clearCache">清空缓存</button>
       </footer>
 
       <p id="status" role="status"></p>

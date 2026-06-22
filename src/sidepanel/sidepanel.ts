@@ -1,11 +1,10 @@
 import { LANGUAGE_OPTIONS } from "../shared/defaults";
+import { applyI18n, languageLabel, providerLabel, t } from "../shared/i18n";
 import { sendMessage } from "../shared/runtime";
 import type { DisplayMode, ExtensionSettings, PageCommandRequest, ProviderId } from "../shared/types";
 import "./sidepanel.css";
 
 const $ = <T extends HTMLElement>(id: string): T => document.getElementById(id) as T;
-const languageLabel = (value: string) => LANGUAGE_OPTIONS.find(([id]) => id === value)?.[1] || value;
-const providerLabel = (value: ProviderId) => (value === "deepseek" ? "DeepSeek" : "智谱 GLM Coding");
 
 const fields = {
   providerSummary: $<HTMLElement>("providerSummary"),
@@ -34,15 +33,17 @@ const setBusy = (busy: boolean) => {
   });
 };
 
-const fillLanguageOptions = () => {
+const fillLanguageOptions = (targetLanguage = currentSettings?.targetLanguage || "zh-Hans") => {
   for (const select of [fields.sourceLanguage, fields.targetLanguage]) {
+    const selectedValue = select.value;
     select.innerHTML = "";
-    for (const [value, label] of LANGUAGE_OPTIONS) {
+    for (const [value] of LANGUAGE_OPTIONS) {
       const option = document.createElement("option");
       option.value = value;
-      option.textContent = label;
+      option.textContent = languageLabel(value, targetLanguage);
       select.append(option);
     }
+    if (selectedValue) select.value = selectedValue;
   }
 };
 
@@ -77,6 +78,9 @@ const readVisibleSettings = (): ExtensionSettings => readSettingsForProvider(fie
 
 const render = (settings: ExtensionSettings) => {
   currentSettings = settings;
+  fillLanguageOptions(settings.targetLanguage);
+  applyI18n(document, settings.targetLanguage);
+  fields.provider.querySelector<HTMLOptionElement>("option[value=glm]")!.textContent = providerLabel("glm", settings.targetLanguage);
   const activeProvider = settings.provider;
   const providerConfig = settings.providers[activeProvider];
   fields.provider.value = activeProvider;
@@ -87,12 +91,12 @@ const render = (settings: ExtensionSettings) => {
   fields.baseUrl.value = providerConfig.baseUrl;
   fields.cacheEnabled.checked = settings.cacheEnabled;
   fields.maxBatchChars.value = String(settings.maxBatchChars);
-  fields.providerSummary.textContent = `${providerLabel(activeProvider)} · ${providerConfig.model}`;
-  fields.languageSummary.textContent = `${languageLabel(settings.sourceLanguage)} → ${languageLabel(settings.targetLanguage)}`;
+  fields.providerSummary.textContent = `${providerLabel(activeProvider, settings.targetLanguage)} · ${providerConfig.model}`;
+  fields.languageSummary.textContent = `${languageLabel(settings.sourceLanguage, settings.targetLanguage)} → ${languageLabel(settings.targetLanguage, settings.targetLanguage)}`;
   setDisplayMode(settings.displayMode);
 };
 
-const persistSettings = async (message = "设置已保存", tone: "ok" | "info" = "ok") => {
+const persistSettings = async (message = t(currentSettings?.targetLanguage, "settingsSaved"), tone: "ok" | "info" = "ok") => {
   currentSettings = await sendMessage<ExtensionSettings>({ type: "SAVE_SETTINGS", settings: readVisibleSettings() });
   render(currentSettings);
   if (message) setStatus(message, tone);
@@ -112,9 +116,8 @@ const runPageCommand = async (type: PageCommandRequest["type"], successMessage: 
 };
 
 const load = async () => {
-  fillLanguageOptions();
   render(await sendMessage<ExtensionSettings>({ type: "GET_SETTINGS" }));
-  setStatus("就绪");
+  setStatus(t(currentSettings.targetLanguage, "ready"));
 };
 
 fields.provider.addEventListener("change", async () => {
@@ -123,27 +126,27 @@ fields.provider.addEventListener("change", async () => {
     currentSettings = readSettingsForProvider(previousProvider);
     currentSettings.provider = fields.provider.value as ProviderId;
     render(currentSettings);
-    await persistSettings("已切换服务商");
+    await persistSettings(t(currentSettings.targetLanguage, "providerSwitched"));
   } catch (error) {
     setStatus(error instanceof Error ? error.message : String(error), "error");
   }
 });
 
 for (const select of [fields.sourceLanguage, fields.targetLanguage]) {
-  select.addEventListener("change", () => persistSettings("语言已更新").catch((error) => setStatus(String(error), "error")));
+  select.addEventListener("change", () => persistSettings(t(fields.targetLanguage.value, "languagesUpdated")).catch((error) => setStatus(String(error), "error")));
 }
 
 for (const button of document.querySelectorAll<HTMLButtonElement>(".segmented button")) {
   button.addEventListener("click", () => {
     setDisplayMode(button.dataset.mode as DisplayMode);
-    persistSettings("显示模式已更新").catch((error) => setStatus(String(error), "error"));
+    persistSettings(t(currentSettings.targetLanguage, "displayModeUpdated")).catch((error) => setStatus(String(error), "error"));
   });
 }
 
-$("translatePage").addEventListener("click", () => runPageCommand("TRANSLATE_PAGE", "已开始翻译当前页"));
-$("restorePage").addEventListener("click", () => runPageCommand("RESTORE_PAGE", "已恢复原文"));
-$("translateSelection").addEventListener("click", () => runPageCommand("TRANSLATE_SELECTION", "已发送划词翻译"));
-$("translateEditable").addEventListener("click", () => runPageCommand("TRANSLATE_EDITABLE", "已发送输入框翻译"));
+$("translatePage").addEventListener("click", () => runPageCommand("TRANSLATE_PAGE", t(currentSettings.targetLanguage, "startedTranslatingPage")));
+$("restorePage").addEventListener("click", () => runPageCommand("RESTORE_PAGE", t(currentSettings.targetLanguage, "restoredOriginal")));
+$("translateSelection").addEventListener("click", () => runPageCommand("TRANSLATE_SELECTION", t(currentSettings.targetLanguage, "selectionCommandSent")));
+$("translateEditable").addEventListener("click", () => runPageCommand("TRANSLATE_EDITABLE", t(currentSettings.targetLanguage, "editableCommandSent")));
 
 $("saveSettings").addEventListener("click", async () => {
   try {
@@ -161,7 +164,7 @@ $("testProvider").addEventListener("click", async () => {
     setBusy(true);
     await persistSettings("", "info");
     const result = await sendMessage<{ sample: string }>({ type: "TEST_PROVIDER" });
-    setStatus(`连接成功：${result.sample}`, "ok");
+    setStatus(`${t(currentSettings.targetLanguage, "connectionSuccess")}: ${result.sample}`, "ok");
   } catch (error) {
     setStatus(error instanceof Error ? error.message : String(error), "error");
   } finally {
@@ -178,7 +181,7 @@ $("openOptions").addEventListener("click", () => chrome.runtime.openOptionsPage(
 $("clearCache").addEventListener("click", async () => {
   try {
     const result = await sendMessage<{ cleared: number }>({ type: "CLEAR_CACHE" });
-    setStatus(`已清空 ${result.cleared} 条缓存`, "ok");
+    setStatus(t(currentSettings.targetLanguage, "cacheCleared", { count: result.cleared }), "ok");
   } catch (error) {
     setStatus(error instanceof Error ? error.message : String(error), "error");
   }

@@ -11,22 +11,22 @@
       <header>
         <div>
           <p class="eyebrow">Amazing Translate</p>
-          <h1>翻译设置</h1>
+          <h1 data-i18n="settingsTitle">翻译设置</h1>
         </div>
-        <button id="save" type="button">保存设置</button>
+        <button id="save" type="button" data-i18n="saveSettings">保存设置</button>
       </header>
       <section class="panel">
-        <h2>服务商</h2>
+        <h2 data-i18n="providerSection">服务商</h2>
         <div class="grid two">
-          <label>默认服务商<select id="provider"><option value="deepseek">DeepSeek</option><option value="glm">智谱 GLM Coding</option></select></label>
-          <label>批量字符上限<input id="maxBatchChars" type="number" min="500" max="12000" step="100" /></label>
+          <label><span data-i18n="defaultProvider">默认服务商</span><select id="provider"><option value="deepseek">DeepSeek</option><option value="glm">智谱 GLM Coding</option></select></label>
+          <label><span data-i18n="maxBatchChars">批量字符上限</span><input id="maxBatchChars" type="number" min="500" max="12000" step="100" /></label>
         </div>
       </section>
       <section class="panel">
         <h2>DeepSeek</h2>
         <div class="grid two">
           <label>API Key<input id="deepseekApiKey" type="password" autocomplete="off" /></label>
-          <label>模型<input id="deepseekModel" type="text" autocomplete="off" /></label>
+          <label><span data-i18n="model">模型</span><input id="deepseekModel" type="text" autocomplete="off" /></label>
           <label class="wide">Base URL<input id="deepseekBaseUrl" type="url" autocomplete="off" /></label>
         </div>
       </section>
@@ -34,22 +34,22 @@
         <h2>智谱 GLM Coding</h2>
         <div class="grid two">
           <label>API Key<input id="glmApiKey" type="password" autocomplete="off" /></label>
-          <label>模型<input id="glmModel" type="text" autocomplete="off" /></label>
+          <label><span data-i18n="model">模型</span><input id="glmModel" type="text" autocomplete="off" /></label>
           <label class="wide">Base URL<input id="glmBaseUrl" type="url" autocomplete="off" /></label>
         </div>
       </section>
       <section class="panel">
-        <h2>语言与显示</h2>
+        <h2 data-i18n="languageAndDisplay">语言与显示</h2>
         <div class="grid three">
-          <label>源语言<select id="sourceLanguage"></select></label>
-          <label>目标语言<select id="targetLanguage"></select></label>
-          <label>显示模式<select id="displayMode"><option value="below">原文下方显示译文</option><option value="replace">仅显示译文，可恢复</option></select></label>
+          <label><span data-i18n="sourceLanguage">源语言</span><select id="sourceLanguage"></select></label>
+          <label><span data-i18n="targetLanguage">目标语言</span><select id="targetLanguage"></select></label>
+          <label><span data-i18n="displayMode">显示模式</span><select id="displayMode"><option value="below" data-i18n="displayBelowLong">原文下方显示译文</option><option value="replace" data-i18n="displayReplaceLong">仅显示译文，可恢复</option></select></label>
         </div>
-        <label class="check"><input id="cacheEnabled" type="checkbox" />启用本地翻译缓存</label>
+        <label class="check"><input id="cacheEnabled" type="checkbox" /><span data-i18n="cacheEnabled">启用本地翻译缓存</span></label>
       </section>
       <section class="actions">
-        <button id="test" type="button">测试当前服务商</button>
-        <button id="clearCache" type="button" class="secondary">清空缓存</button>
+        <button id="test" type="button" data-i18n="testCurrentProvider">测试当前服务商</button>
+        <button id="clearCache" type="button" class="secondary" data-i18n="clearCache">清空缓存</button>
         <span id="status" role="status"></span>
       </section>
     </main>
