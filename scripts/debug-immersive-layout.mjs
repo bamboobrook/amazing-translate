@@ -21,6 +21,10 @@ const html = [
   '    <a href="/stories">View all stories</a>',
   '  </section>',
   '  <aside class="x-live-card"><h2>X 上的直播</h2><p>比特币按预期暴跌，后续怎么看？水哥盈利300万！</p></aside>',
+  '  <article data-testid="tweet" style="width:520px">',
+  '    <div data-testid="tweetText" lang="en" style="width:500px;height:260px">alright it seems people are losing their shit about zai glm being good.<br><br>it’s been a not too open secret that the best hyper token burning engineers for last six months have been doing statsarb in this window of opportunity whilst western companies have been locking in with either openai or anthropic.<br><br>the glm models are really fantastic but they are like an autistic german. black and white thinking and high precision.</div>',
+  '    <div role="group" aria-label="Post actions"><span>21</span><span>39</span><span>274</span></div>',
+  '  </article>',
   '  <article>',
   '    <h1 style="color:rgb(89, 42, 130)">A concise heading for immersive translation testing</h1>',
   '    <p style="color:rgb(35, 47, 62)">Modern browser extensions can improve reading workflows without sending every page to a remote service automatically.</p>',
@@ -77,6 +81,7 @@ window.HTMLElement.prototype.setPointerCapture = function () {};
 window.HTMLElement.prototype.releasePointerCapture = function () {};
 
 const capturedBlocks = [];
+const capturedBatches = [];
 let batchDelayMs = 0;
 const selectionRect = { x: 0, y: 0, top: 96, left: 80, right: 300, bottom: 118, width: 220, height: 22, toJSON: () => ({}) };
 const selectionRange = {
@@ -95,6 +100,7 @@ window.chrome = {
       if (request.type === 'GET_SETTINGS') return { ok: true, data: { displayMode: 'below', targetLanguage: 'zh-Hans' } };
       if (request.type === 'TRANSLATE_BATCH') {
         capturedBlocks.push(...request.blocks);
+        capturedBatches.push(request.blocks.map((block) => block.text));
         if (batchDelayMs > 0) await new Promise((resolve) => window.setTimeout(resolve, batchDelayMs));
         return {
           ok: true,
@@ -182,6 +188,8 @@ for (const expected of ['News', 'Video', 'Prices', 'Featured Stories', 'View all
   if (!capturedText.includes(expected)) failures.push('expected to capture compact/navigation label: ' + expected);
 }
 if (!capturedText.some((text) => /Modern browser extensions/.test(text))) failures.push('expected article paragraph text to be captured');
+if (!capturedText.some((text) => /zai glm being good/.test(text))) failures.push('expected X tweet detail body text to be captured');
+if (capturedBatches.some((batch) => batch.filter((text) => /zai glm being good/.test(text)).length > 1)) failures.push('expected X tweet detail body to be captured once per translation batch');
 if (!capturedText.some((text) => /Try it out today/.test(text))) failures.push('expected English X-style post text to be captured');
 if (!capturedText.some((text) => /Welcome to Computex/.test(text))) failures.push('expected English-dominant mixed text to be captured');
 for (const unexpected of [
@@ -241,6 +249,7 @@ if (failures.length) {
 
 console.log(JSON.stringify({
   capturedBlocks: capturedBlocks.length,
+  capturedBatches: capturedBatches.length,
   translationNodes: translations.length,
   compactNodes: translations.filter((node) => node.getAttribute('data-placement') !== 'after').length,
   pendingDuringTranslate: pendingDuringTranslate.length,

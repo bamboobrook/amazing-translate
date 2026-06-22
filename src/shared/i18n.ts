@@ -470,16 +470,28 @@ const TEXT: Record<UiLanguage, Partial<Record<UiTextKey, string>>> = {
   }
 };
 
-const LANGUAGE_LABELS: Record<UiLanguage, Record<LanguageOptionValue, string>> = {
-  en: { auto: "Auto detect", "zh-Hans": "Simplified Chinese", "zh-Hant": "Traditional Chinese", en: "English", ja: "Japanese", ko: "Korean", fr: "French", de: "German", es: "Spanish", ru: "Russian" },
-  "zh-Hans": { auto: "自动识别", "zh-Hans": "简体中文", "zh-Hant": "繁体中文", en: "英语", ja: "日语", ko: "韩语", fr: "法语", de: "德语", es: "西班牙语", ru: "俄语" },
-  "zh-Hant": { auto: "自動識別", "zh-Hans": "簡體中文", "zh-Hant": "繁體中文", en: "英文", ja: "日文", ko: "韓文", fr: "法文", de: "德文", es: "西班牙文", ru: "俄文" },
-  ja: { auto: "自動検出", "zh-Hans": "簡体字中国語", "zh-Hant": "繁体字中国語", en: "英語", ja: "日本語", ko: "韓国語", fr: "フランス語", de: "ドイツ語", es: "スペイン語", ru: "ロシア語" },
-  ko: { auto: "자동 감지", "zh-Hans": "중국어 간체", "zh-Hant": "중국어 번체", en: "영어", ja: "일본어", ko: "한국어", fr: "프랑스어", de: "독일어", es: "스페인어", ru: "러시아어" },
-  fr: { auto: "Détection auto", "zh-Hans": "Chinois simplifié", "zh-Hant": "Chinois traditionnel", en: "Anglais", ja: "Japonais", ko: "Coréen", fr: "Français", de: "Allemand", es: "Espagnol", ru: "Russe" },
-  de: { auto: "Automatisch erkennen", "zh-Hans": "Chinesisch vereinfacht", "zh-Hant": "Chinesisch traditionell", en: "Englisch", ja: "Japanisch", ko: "Koreanisch", fr: "Französisch", de: "Deutsch", es: "Spanisch", ru: "Russisch" },
-  es: { auto: "Detectar automáticamente", "zh-Hans": "Chino simplificado", "zh-Hant": "Chino tradicional", en: "Inglés", ja: "Japonés", ko: "Coreano", fr: "Francés", de: "Alemán", es: "Español", ru: "Ruso" },
-  ru: { auto: "Автоопределение", "zh-Hans": "Китайский упрощенный", "zh-Hant": "Китайский традиционный", en: "Английский", ja: "Японский", ko: "Корейский", fr: "Французский", de: "Немецкий", es: "Испанский", ru: "Русский" }
+const AUTO_DETECT_LABELS: Record<UiLanguage, string> = {
+  en: "Auto detect",
+  "zh-Hans": "自动识别",
+  "zh-Hant": "自動識別",
+  ja: "自動検出",
+  ko: "자동 감지",
+  fr: "Détection auto",
+  de: "Automatisch erkennen",
+  es: "Detectar automáticamente",
+  ru: "Автоопределение"
+};
+
+const NATIVE_LANGUAGE_LABELS: Record<Exclude<LanguageOptionValue, "auto">, string> = {
+  "zh-Hans": "简体中文",
+  "zh-Hant": "繁體中文",
+  en: "English",
+  ja: "日本語",
+  ko: "한국어",
+  fr: "Français",
+  de: "Deutsch",
+  es: "Español",
+  ru: "Русский"
 };
 
 export const uiLanguageForTarget = (targetLanguage = "zh-Hans"): UiLanguage => {
@@ -503,8 +515,8 @@ export const t = (targetLanguage: string | undefined, key: UiTextKey, values: Re
 };
 
 export const languageLabel = (value: string, targetLanguage = "zh-Hans"): string => {
-  const language = uiLanguageForTarget(targetLanguage);
-  return LANGUAGE_LABELS[language][value as LanguageOptionValue] || value;
+  if (value === "auto") return AUTO_DETECT_LABELS[uiLanguageForTarget(targetLanguage)];
+  return NATIVE_LANGUAGE_LABELS[value as Exclude<LanguageOptionValue, "auto">] || value;
 };
 
 export const providerLabel = (value: ProviderId, targetLanguage = "zh-Hans"): string =>

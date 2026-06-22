@@ -69,11 +69,17 @@ if (document.querySelector('#sourceLanguage')?.children.length < 8) failures.pus
 if (document.querySelector('.segmented button[data-mode="below"]')?.dataset.active !== 'true') failures.push('below display mode is not active');
 
 const targetLanguage = document.querySelector('#targetLanguage');
-targetLanguage.value = 'ja';
+targetLanguage.value = 'en';
 targetLanguage.dispatchEvent(new window.Event('change'));
 await new Promise((resolve) => window.setTimeout(resolve, 10));
-if (settings.targetLanguage !== 'ja') failures.push('target language change was not saved');
-if (!document.querySelector('#languageSummary')?.textContent?.includes('日本語')) failures.push('language summary did not update after save');
+if (settings.targetLanguage !== 'en') failures.push('target language change was not saved');
+if (!document.querySelector('#languageSummary')?.textContent?.includes('English')) failures.push('language summary did not update after save');
+if (document.querySelector('[data-i18n="targetLanguage"]')?.textContent !== 'Target language') failures.push('settings UI should follow the selected target language');
+const targetOptionText = (value) => document.querySelector(`#targetLanguage option[value="${value}"]`)?.textContent || '';
+if (targetOptionText('zh-Hans') !== '简体中文') failures.push('Simplified Chinese option should use native Simplified Chinese label');
+if (targetOptionText('zh-Hant') !== '繁體中文') failures.push('Traditional Chinese option should use native Traditional Chinese label');
+if (targetOptionText('en') !== 'English') failures.push('English option should use native English label');
+if (targetOptionText('ja') !== '日本語') failures.push('Japanese option should use native Japanese label');
 
 document.querySelector('#provider').value = 'glm';
 document.querySelector('#provider').dispatchEvent(new window.Event('change'));

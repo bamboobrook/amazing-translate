@@ -322,7 +322,9 @@ const SEMANTIC_TEXT_SELECTOR = [
   "h4",
   "h5",
   "h6",
-  "[data-amazing-translate-block]"
+  "[data-amazing-translate-block]",
+  "[data-testid='tweetText']",
+  "[data-testid='tweetText'] [lang]"
 ].join(",");
 
 const NEWS_TEXT_SELECTOR = [
@@ -588,11 +590,14 @@ const isTranslatableText = (element: HTMLElement, text: string, targetLanguage =
   return isMeaningfulText(text) || (isLikelyUiLabelElement(element) && isShortUiLabelText(text));
 };
 
+const isXTweetTextElement = (element: HTMLElement): boolean =>
+  element.getAttribute("data-testid") === "tweetText" || Boolean(element.closest("[data-testid='tweetText']") && element.hasAttribute("lang"));
+
 const isSemanticTextElement = (element: HTMLElement): boolean =>
-  SEMANTIC_TAGS.has(element.tagName) || element.hasAttribute("data-amazing-translate-block");
+  SEMANTIC_TAGS.has(element.tagName) || element.hasAttribute("data-amazing-translate-block") || isXTweetTextElement(element);
 
 const hasBlockDescendant = (element: HTMLElement): boolean =>
-  Boolean(element.querySelector(SEMANTIC_TEXT_SELECTOR));
+  Boolean(Array.from(element.querySelectorAll<HTMLElement>(SEMANTIC_TEXT_SELECTOR)).some((child) => !isXTweetTextElement(element) || !isXTweetTextElement(child)));
 
 const textWithBreaks = (element: HTMLElement): string => {
   const clone = element.cloneNode(true) as HTMLElement;
