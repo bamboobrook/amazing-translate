@@ -109,6 +109,30 @@ gh release create v0.1.1 release/amazing-translate-0.1.1.zip \
   --notes-file docs/release-notes/v0.1.1.md
 ```
 
+Mac 用户可以使用安装脚本下载最新 GitHub Release，并把扩展解压到固定目录：
+
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/bamboobrook/amazing-translate/main/scripts/install-macos.sh)"
+```
+
+脚本会：
+
+- 下载最新 `amazing-translate-*.zip` Release asset。
+- 解压到 `~/Applications/AmazingTranslate`。
+- 打开 Chrome 的 `chrome://extensions/`。
+- 提示用户手动开启 Developer mode、点击 Load unpacked、选择解压目录。
+
+Chrome 不允许脚本静默安装 unpacked extension，因此最后一步必须由用户自己在 Chrome 中确认。API Key 不包含在发布包中，用户需要在扩展侧边栏或设置页自行填写。
+
+如果是私有仓库，token 需要同时用于下载安装脚本和脚本内部访问 GitHub Releases API；如果只是临时 ZIP 链接，也可以直接指定 ZIP：
+
+```bash
+GITHUB_TOKEN=ghp_xxx bash -c 'curl -fsSL -H "Authorization: Bearer $GITHUB_TOKEN" https://raw.githubusercontent.com/bamboobrook/amazing-translate/main/scripts/install-macos.sh | GITHUB_TOKEN="$GITHUB_TOKEN" /bin/bash'
+AMAZING_TRANSLATE_ZIP_URL="https://example.com/amazing-translate-0.1.0.zip" /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/bamboobrook/amazing-translate/main/scripts/install-macos.sh)"
+```
+
+更完整的 Mac 分享说明见 `docs/macos-sharing.md`。
+
 用户手动安装步骤：
 
 1. 打开 GitHub Release 页面，下载 `amazing-translate-版本号.zip`。
